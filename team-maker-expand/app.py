@@ -239,19 +239,32 @@ class TeamProcessorApp:
                 self.input_file.get(), sheet_name=self.player_sheet.get())
             self.players_df.columns = [c.strip() for c in self.players_df.columns]
 
+            # Make column names case-insensitive by creating a mapping
+            column_map = {col.lower(): col for col in self.players_df.columns}
+
             # Resolve name column flexibly
-            name_col = next((c for c in ['Name', 'playername', 'Firstname']
-                             if c in self.players_df.columns), None)
-            pos_col  = next((c for c in ['Position', 'Position1']
-                             if c in self.players_df.columns), None)
+            name_col_options = ['name', 'playername', 'firstname']
+            name_col = next((column_map[opt] for opt in name_col_options if opt in column_map), None)
+
+            pos_col_options = ['position', 'position1']
+            pos_col = next((column_map[opt] for opt in pos_col_options if opt in column_map), None)
+
+            # Find playerid column (case-insensitive)
+            playerid_col = next((column_map[opt] for opt in ['playerid', 'playerid', 'Playerid'] if opt in column_map), None)
+
+            # Find team column (case-insensitive)
+            team_col = next((column_map[opt] for opt in ['team', 'Team'] if opt in column_map), None)
+
+            # Find OVR column (case-insensitive)
+            ovr_col = next((column_map[opt] for opt in ['ovr', 'OVR'] if opt in column_map), None)
 
             self.players_tree.delete(*self.players_tree.get_children())
             for _, row in self.players_df.iterrows():
                 self.players_tree.insert("", "end", values=(
-                    row.get('playerid', ''),
+                    row[playerid_col] if playerid_col else '',
                     row[name_col] if name_col else '',
-                    row.get('Team', ''),
-                    row.get('OVR', ''),
+                    row[team_col] if team_col else '',
+                    row[ovr_col] if ovr_col else '',
                     row[pos_col] if pos_col else '',
                 ))
             self.players_count.config(text=f"Total Players: {len(self.players_df)}")
@@ -307,8 +320,10 @@ class TeamProcessorApp:
         except Exception as e:
             err = f"[ERROR] {e}\n{traceback.format_exc()}"
             self._safe_log(err)
+            # Capture the exception in a local variable to avoid closure issues
+            error_msg = str(e)
             self.root.after(0, lambda: messagebox.showerror(
-                "Processing Error", f"Processing failed:\n{e}"))
+                "Processing Error", f"Processing failed:\n{error_msg}"))
         finally:
             self.root.after(0, self._reset_process_btn)
             self.root.after(0, lambda: self._safe_update_progress(0, "Ready"))
