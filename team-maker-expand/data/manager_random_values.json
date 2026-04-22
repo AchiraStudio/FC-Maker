@@ -1,0 +1,19 @@
+{
+  "firstnames": ["Alex", "James", "Maria", "John", "Emma", "Mohamed", "Wei", "Olivia"],
+  "lastnames": ["Smith", "Garcia", "Zhang", "Lee", "Kowalski", "Nguyen", "Cohen", "Kim"],
+  "eyebrowcodes": [1, 2, 3, 4, 5],
+  "facialhairtypecodes": [0, 1, 2, 3, 4, 5],
+  "hairtypecodes": [1, 2, 3, 4, 5, 6, 7, 8],
+  "skinsurfacepacks": [1, 2, 3],
+  "headtypecodes": [1, 2, 3, 4, 5],
+  "heights": [160, 165, 170, 175, 180, 185, 190, 195, 200],
+  "seasonaloutfitids": [100, 101, 102, 103, 104],
+  "weights": [65, 70, 75, 80, 85, 90],
+  "ethnicities": [1, 2, 3, 4, 5, 6],
+  "personalityids": [0, 1],
+  "nationalities": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  "skintonecodes": [1, 2, 3, 4, 5],
+  "outfitids": [200, 201, 202, 203, 204],
+  "bodytypecodes": [1, 2, 3, 4],
+  "facialhaircolorcodes": [1, 2, 3, 4, 5]
+}

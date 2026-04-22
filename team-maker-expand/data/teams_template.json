@@ -1,0 +1,33 @@
+{
+  "columns": [
+    "assetid", "teamcolor1g", "teamcolor1r", "clubworth", "teamcolor2b",
+    "goalnetstanchioncolor2g", "teamcolor2r", "foundationyear",
+    "goalnetstanchioncolor2r", "teamcolor3r", "goalnetstanchioncolor1b",
+    "teamcolor1b", "opponentweakthreshold", "latitude", "teamcolor3g",
+    "opponentstrongthreshold", "goalnetstanchioncolor2b",
+    "goalnetstanchioncolor1r", "teamcolor2g", "goalnetstanchioncolor1g",
+    "teamname", "teamcolor3b", "presassetone", "powid", "hassubstitutionboard",
+    "rightfreekicktakerid", "flamethrowercannon", "domesticprestige",
+    "genericint2", "defensivedepth", "hasvikingclap", "jerseytype",
+    "pitchcolor", "pitchwear", "popularity", "hastifo", "presassettwo",
+    "teamstadiumcapacity", "stadiumgoalnetstyle", "iscompetitionscarfenabled",
+    "cityid", "rivalteam", "playsurfacetype", "isbannerenabled",
+    "midfieldrating", "stadiummowpattern_code", "matchdayoverallrating",
+    "matchdaymidfieldrating", "attackrating", "longitude", "buildupplay",
+    "matchdaydefenserating", "hasstandingcrowd", "favoriteteamsheetid",
+    "defenserating", "iscompetitionpoleflagenabled", "skinnyflags",
+    "uefa_consecutive_wins", "longkicktakerid", "trait1vweak",
+    "iscompetitioncrowdcardsenabled", "rightcornerkicktakerid", "gender",
+    "cksupport1", "uefa_cl_wins", "hassuncanthem", "domesticcups",
+    "ethnicity", "leftcornerkicktakerid", "youthdevelopment", "teamid",
+    "uefa_el_wins", "trait1vequal", "numtransfersin", "stanchionflamethrower",
+    "stadiumgoalnetpattern", "captainid", "personalityid", "prev_el_champ",
+    "leftfreekicktakerid", "cksupport2", "leaguetitles", "genericbanner",
+    "crowdregion", "uefa_uecl_wins", "overallrating", "ballid", "profitability",
+    "utcoffset", "penaltytakerid", "pitchlinecolor", "freekicktakerid",
+    "crowdskintonecode", "internationalprestige", "cksupport3", "haslargeflag",
+    "trainingstadium", "form", "genericint1", "trait1vstrong",
+    "matchdayattackrating"
+  ],
+  "template": "{team_id},18,32,8500,6,255,255,1935,255,255,255,130,1,-25,255,1,255,255,217,255,{team_name},255,0,-1,0,{rightfreekicktakerid},0,1,-1,30,0,2,4,0,2,0,0,3000,0,1,771,101108,0,1,63,3,63,63,61,-57,3,63,0,-1,63,1,1,0,{longkicktakerid},4202496,0,{rightcornerkicktakerid},0,0,0,0,0,5,{leftcornerkicktakerid},4,{team_id},0,528384,0,0,0,{captainid},0,0,{leftfreekicktakerid},0,0,0,1,0,63,74,1,-3,{penaltytakerid},0,{freekicktakerid},7,1,0,1,316,0,-1,526336,61"
+}

@@ -1,0 +1,6 @@
+{
+    "columns": [
+        "langid", "stringid", "stringvalue", "hash"
+    ],
+    "template": "0,{stringid},{stringvalue},{hash}"
+}

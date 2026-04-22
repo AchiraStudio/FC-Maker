@@ -1,0 +1,219 @@
+﻿confederation	streetdressing	nationname	top_tier	nationstartingfirstletter	groupid	isocountrycode	nationid
+2	3	Albania	0	1	13	AL	1
+2	3	Andorra	0	1	28	AD	2
+2	1	Armenia	0	1	14	AM	3
+2	2	Austria	0	1	15	AT	4
+2	3	Azerbaijan	0	1	16	AZ	5
+2	1	Belarus	0	1	4	BY	6
+2	1	Belgium	0	1	18	BE	7
+2	1	Bosnia and Herzegovina	0	1	19	BA	8
+2	1	Bulgaria	0	1	21	BG	9
+2	1	Croatia	0	1	0	HR	10
+2	3	Cyprus	0	1	2	CY	11
+2	1	Czech Republic	0	1	32	CZ	12
+2	1	Denmark	0	1	33	DK	13
+2	1	England	1	1	38	GB	14
+2	3	Montenegro	0	1	0	ME	15
+2	1	Faroe Islands	0	1	49	FO	16
+2	1	Finland	0	1	1	FI	17
+2	2	France	1	1	41	FR	18
+2	3	North Macedonia	0	1	21	MK	19
+2	1	Georgia	0	1	46	GE	20
+2	1	Germany	1	1	48	DE	21
+2	3	Greece	0	1	2	GR	22
+2	1	Hungary	0	1	52	HU	23
+2	1	Iceland	0	1	53	IS	24
+2	1	Republic of Ireland	0	1	102	IE	25
+2	3	Israel	0	1	57	IL	26
+2	3	Italy	1	1	58	IT	27
+2	1	Latvia	0	1	35	LV	28
+2	1	Liechtenstein	0	1	47	LI	29
+2	1	Lithuania	0	1	98	LT	30
+2	1	Luxembourg	0	1	63	LU	31
+2	3	Malta	0	1	68	MT	32
+2	1	Moldova	0	1	3	MD	33
+2	1	Holland	1	1	34	NL	34
+2	1	Northern Ireland	0	1	56	GB	35
+2	1	Norway	0	1	75	NO	36
+2	1	Poland	0	1	78	PL	37
+2	3	Portugal	1	1	6	PT	38
+2	1	Romania	0	1	3	RO	39
+2	1	Russia	0	1	4	RU	40
+2	3	San Marino	0	1	58	SM	41
+2	1	Scotland	0	1	80	GB	42
+2	1	Slovakia	0	1	32	SK	43
+2	1	Slovenia	0	1	82	SI	44
+2	3	Spain	1	1	5	ES	45
+2	1	Sweden	0	1	87	SE	46
+2	1	Switzerland	0	1	88	CH	47
+2	3	Turkey	0	1	91	TR	48
+2	1	Ukraine	0	1	93	UA	49
+2	1	Wales	0	1	95	GB	50
+2	1	Serbia	0	1	0	RS	51
+4	3	Argentina	1	1	96	AR	52
+4	3	Bolivia	0	1	96	BO	53
+4	3	Brazil	1	1	20	BR	54
+4	3	Chile	0	1	96	CL	55
+4	3	Colombia	0	1	96	CO	56
+4	3	Ecuador	0	1	96	EC	57
+4	3	Paraguay	0	1	96	PY	58
+4	3	Peru	0	1	96	PE	59
+4	3	Uruguay	0	1	96	UY	60
+4	3	Venezuela	0	1	96	VE	61
+7	3	Anguilla	0	1	25	AI	62
+7	3	Antigua and Barbuda	0	1	25	AG	63
+7	3	Aruba	0	1	26	AW	64
+7	3	Bahamas	0	1	25	BS	65
+7	3	Barbados	0	1	25	BB	66
+7	3	Belize	0	1	97	BZ	67
+7	3	Bermuda	0	1	25	BM	68
+7	3	British Virgin Islands	0	1	25	VG	69
+7	4	Canada	0	1	74	CA	70
+7	3	Cayman Islands	0	1	25	KY	71
+7	3	Costa Rica	0	1	96	CR	72
+7	3	Cuba	0	1	96	CU	73
+7	3	Dominica	0	1	25	DM	74
+1	1	International	0	1	38		75
+7	3	El Salvador	0	1	96	SV	76
+7	3	Grenada	0	1	25	GD	77
+7	3	Guatemala	0	1	96	GT	78
+7	3	Guyana	0	1	25	GY	79
+7	3	Haiti	0	1	27	HT	80
+7	3	Honduras	0	1	96	HN	81
+7	3	Jamaica	0	1	25	JM	82
+7	3	Mexico	0	1	96	MX	83
+7	3	Montserrat	0	1	25	MS	84
+7	3	Curaçao	0	1	24	AN	85
+7	3	Nicaragua	0	1	96	NI	86
+7	3	Panama	0	1	96	PA	87
+7	3	Puerto Rico	0	1	96	PR	88
+7	3	St. Kitts and Nevis	0	1	25	KN	89
+7	3	St. Lucia	0	1	25	LC	90
+7	3	St. Vincent and the Grenadines	0	1	25	VC	91
+7	3	Suriname	0	1	34	SR	92
+7	3	Trinidad and Tobago	0	1	25	TT	93
+7	3	Turks and Caicos Islands	0	1	25	TC	94
+7	4	United States	0	1	74	US	95
+7	3	US Virgin Islands	0	1	25	VI	96
+3	3	Algeria	0	1	65	DZ	97
+3	3	Angola	0	1	12	AO	98
+3	3	Benin	0	1	42	BJ	99
+3	3	Botswana	0	1	11	BW	100
+3	3	Burkina Faso	0	1	42	BF	101
+3	3	Burundi	0	1	29	BI	102
+3	3	Cameroon	0	1	42	CM	103
+3	3	Cape Verde Islands	0	1	12	CV	104
+3	3	Central African Republic	0	1	30	CF	105
+3	3	Chad	0	1	43	TD	106
+3	3	Congo	0	1	29	CG	107
+3	3	Côte d’Ivoire	0	1	31	CI	108
+3	3	Djibouti	0	1	51	DJ	109
+3	3	Congo DR	0	1	42	CD	110
+3	5	Egypt	0	1	37	EG	111
+3	3	Equatorial Guinea	0	1	5	GQ	112
+3	3	Eritrea	0	1	51	ER	113
+3	3	Ethiopia	0	1	40	ET	114
+3	3	Gabon	0	1	42	GA	115
+3	3	Gambia	0	1	45	GM	116
+3	3	Ghana	0	1	7	GH	117
+3	3	Guinea	0	1	42	GN	118
+3	3	Guinea-Bissau	0	1	12	GW	119
+3	3	Kenya	0	1	36	KE	120
+3	3	Lesotho	0	1	85	LS	121
+3	3	Liberia	0	1	7	LR	122
+3	5	Libya	0	1	65	LY	123
+3	3	Madagascar	0	1	64	MG	124
+3	3	Malawi	0	1	99	MW	125
+3	3	Mali	0	1	43	ML	126
+3	3	Mauritania	0	1	43	MR	127
+3	3	Mauritius	0	1	42	MU	128
+3	3	Morocco	0	1	65	MA	129
+3	3	Mozambique	0	1	12	MZ	130
+3	3	Namibia	0	1	71	NA	131
+3	3	Niger	0	1	43	NE	132
+3	3	Nigeria	0	1	73	NG	133
+3	3	Rwanda	0	1	29	RW	134
+3	3	São Tomé e Príncipe	0	1	12	ST	135
+3	3	Senegal	0	1	42	SN	136
+3	3	Seychelles	0	1	7	SC	137
+3	3	Sierra Leone	0	1	7	SL	138
+3	3	Somalia	0	1	51	SO	139
+3	3	South Africa	0	1	84	ZA	140
+3	3	Sudan	0	1	37	SD	141
+3	3	Eswatini	0	1	83	SZ	142
+3	3	Tanzania	0	1	36	TZ	143
+3	3	Togo	0	1	42	TG	144
+3	3	Tunisia	0	1	65	TN	145
+3	3	Uganda	0	1	36	UG	146
+3	3	Zambia	0	1	100	ZM	147
+3	3	Zimbabwe	0	1	101	ZW	148
+5	3	Afghanistan	0	1	76	AF	149
+5	5	Bahrain	0	1	8	BH	150
+5	3	Bangladesh	0	1	17	BD	151
+5	3	Bhutan	0	1	72	BT	152
+5	3	Brunei Darussalam	0	1	66	BN	153
+5	3	Cambodia	0	1	23	KH	154
+5	3	China PR	0	1	9	CN	155
+5	3	Guam	0	1	25	GU	157
+5	3	Hong Kong	0	1	9	HK	158
+5	3	India	0	1	54	IN	159
+5	3	Indonesia	0	1	55	ID	160
+5	5	Iran	0	1	8	IR	161
+5	5	Iraq	0	1	8	IQ	162
+5	4	Japan	0	1	10	JP	163
+5	5	Jordan	0	1	8	JO	164
+2	3	Kazakhstan	0	1	59	KZ	165
+5	4	Korea DPR	0	1	60	KP	166
+5	4	Korea Republic	0	1	60	KR	167
+5	5	Kuwait	0	1	8	KW	168
+5	3	Kyrgyzstan	0	1	61	KG	169
+5	3	Laos	0	1	62	LA	170
+5	3	Lebanon	0	1	8	LB	171
+5	3	Macau	0	1	9	MO	172
+5	3	Malaysia	0	1	66	MY	173
+5	3	Maldives	0	1	67	MV	174
+5	3	Mongolia	0	1	70	MN	175
+5	3	Myanmar	0	1	22	MM	176
+5	3	Nepal	0	1	72	NP	177
+5	5	Oman	0	1	8	OM	178
+5	5	Pakistan	0	1	76	PK	179
+5	5	Palestine	0	1	8	PS	180
+5	3	Philippines	0	1	77	PH	181
+5	5	Qatar	0	1	8	QA	182
+5	5	Saudi Arabia	0	1	8	SA	183
+5	3	Singapore	0	1	81	SG	184
+5	3	Sri Lanka	0	1	86	LK	185
+5	5	Syria	0	1	8	SY	186
+5	3	Tajikistan	0	1	89	TJ	187
+5	3	Thailand	0	1	90	TH	188
+5	3	Turkmenistan	0	1	92	TM	189
+5	5	United Arab Emirates	0	1	8	AE	190
+5	5	Uzbekistan	0	1	4	UZ	191
+5	3	Vietnam	0	1	94	VN	192
+5	4	Yemen	0	1	8	YE	193
+6	3	American Samoa	0	1	79	AS	194
+5	4	Australia	0	1	38	AU	195
+6	3	Cook Islands	0	1	79	CK	196
+6	3	Fiji	0	1	69	FJ	197
+6	1	New Zealand	0	1	38	NZ	198
+6	3	Papua New Guinea	0	1	69	PG	199
+6	3	Samoa	0	1	79	WS	200
+6	3	Solomon Islands	0	1	69	SB	201
+6	3	Tahiti	0	1	44	PF	202
+6	3	Tonga	0	1	79	TO	203
+6	3	Vanuatu	0	1	69	VU	204
+1	3	Gibraltar	0	1	38	GI	205
+1	1	Greenland	0	1	33	GL	206
+7	3	Dominican Republic	0	1	96	DO	207
+2	1	Estonia	0	1	39	EE	208
+1	1	Created Players Country	0	1	38		209
+1	1	Free Agents Country	0	1	38		210
+1	1	Rest of World	0	1	38		211
+5	3	Timor-Leste	0	1	6	TL	212
+5	3	Chinese Taipei	0	1	9	TW	213
+3	3	Comoros	0	1	43	KM	214
+6	3	New Caledonia	0	1	44	NC	215
+3	3	South Sudan	0	1	37	SS	218
+2	1	Kosovo	0	1	13	XK	219
+1	1	International Women	0	1	38		222
+4	3	CONMEBOL	0	1	38		225
