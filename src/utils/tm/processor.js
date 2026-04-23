@@ -249,16 +249,18 @@ export function processData(teams, players, isNationalTeam = false, startManager
     setCol('matchdayattackrating',   ratings.matchdayAttack);
     setCol('matchdaymidfieldrating', ratings.matchdayMidfield);
     setCol('matchdaydefenserating',  ratings.matchdayDefense);
+    
     results.teams.push(tVals);
-
     // 2. TeamKits
     templates.teamkits.templates.forEach((kitTemplate, kitIdx) => {
-      let kRow = kitTemplate.replace(/{team_id}/g, teamId);
-      if (startTeamKitId !== null) {
-        const kVals = kRow.split(',');
-        kVals[0] = String(startTeamKitId + (idx * 3) + kitIdx);
-        kRow = kVals.join(',');
-      }
+      let kRow = kitTemplate
+        .replace(/{team_id}/g, teamId)
+        .replace(/{teamid}/g, teamId);
+      
+      // Replace the starting kit ID placeholder
+      const computedKitId = startTeamKitId + (idx * 3) + kitIdx;
+      kRow = kRow.replace(/{startingKitId}/g, computedKitId);
+      
       results.teamkits.push(kRow.split(','));
     });
 

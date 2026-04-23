@@ -98,33 +98,34 @@ export const templates = {
     template: "{teamid},26,218,2500000,255,1,255,1886,1,228,1,53,3,51,206,3,1,1,255,1,{team_name},60,0,-1,0,{rightfreekicktakerid},0,10,-1,0,65,0,2,3,0,0,9,0,0,60704,0,0,285,18,0,1,85,0,1,0,84,85,84,0,1,85,0,-1,85,0,0,0,{longkicktakerid},131586,2,{rightcornerkicktakerid},0,0,0,0,0,0,14,4,{leftcornerkicktakerid},7,{teamid},0,131586,0,0,0,0,{captainid},1,0,{leftfreekicktakerid},0,13,0,3,0,85,151,9,0,{penaltytakerid},0,0,{freekicktakerid},2,9,0,0,366,0,-1,0,263170,84"
   },
   teamkits: {
-    columns: [
-      "teamkitid", "chestbadge", "shortsnumberplacementcode", "shortsnumbercolorprimg",
-      "teamcolorsecb", "shortsrenderingdetailmaptype", "jerseyfrontnumberplacementcode",
-      "jerseynumbercolorsecr", "jerseynumbercolorprimr", "jerseynumbercolorprimg",
-      "shortsnumbercolorsecb", "teamcolorprimg", "shortsnumbercolorterb",
-      "shortsnumbercolorprimr", "teamcolortertb", "jerseynumbercolorterg",
-      "jerseynameoutlinecolorr", "shortsnumbercolorprimb", "jerseynamelayouttype",
-      "jerseynumbercolorterr", "jerseyrightsleevebadge", "jerseynumbercolorprimb",
-      "jerseyshapestyle", "jerseybacknameplacementcode", "teamcolorprimr",
-      "jerseynamecolorg", "jerseyleftsleevebadge", "jerseynameoutlinecolorb",
-      "teamcolorsecg", "shortsnumbercolorsecg", "teamcolortertr",
-      "jerseynumbercolorsecg", "renderingmaterialtype", "shortsnumbercolorterr",
-      "teamcolorsecr", "jerseycollargeometrytype", "shortsnumbercolorterg",
-      "jerseynamecolorr", "teamcolorprimb", "jerseyrenderingdetailmaptype",
-      "jerseynameoutlinecolorg", "jerseynumbercolorsecb", "jerseynamecolorb",
-      "jerseynumbercolorterb", "teamcolortertg", "shortsnumbercolorsecr",
-      "jerseybacknamefontcase", "teamkittypetechid", "powid", "isinheritbasedetailmap",
-      "islocked", "numberfonttype", "jerseynamefonttype", "teamcolorprimpercent",
-      "teamcolorsecpercent", "year", "captainarmband", "teamtechid", "isembargoed",
-      "hasadvertisingkit", "jerseynameoutlinewidth", "dlc", "teamcolortertpercent",
-      "armbandtype", "shortsnumberfonttype", "shortstyle", "jerseyfit",
-      "jerseyrestriction"
-    ],
+      columns: [
+        "teamkitid", "chestbadge", "shortsnumberplacementcode", "shortsnumbercolorprimg",
+        "teamcolorsecb", "shortsrenderingdetailmaptype", "jerseyfrontnumberplacementcode",
+        "jerseynumbercolorsecr", "jerseynumbercolorprimr", "jerseynumbercolorprimg",
+        "shortsnumbercolorsecb", "teamcolorprimg", "shortsnumbercolorterb",
+        "shortsnumbercolorprimr", "teamcolortertb", "jerseynumbercolorterg",
+        "jerseynameoutlinecolorr", "shortsnumbercolorprimb", "jerseynamelayouttype",
+        "jerseynumbercolorterr", "jerseyrightsleevebadge", "jerseynumbercolorprimb",
+        "jerseyshapestyle", "jerseybacknameplacementcode", "teamcolorprimr",
+        "jerseynamecolorg", "jerseyleftsleevebadge", "jerseynameoutlinecolorb",
+        "teamcolorsecg", "shortsnumbercolorsecg", "teamcolortertr",
+        "jerseynumbercolorsecg", "renderingmaterialtype", "shortsnumbercolorterr",
+        "teamcolorsecr", "jerseycollargeometrytype", "shortsnumbercolorterg",
+        "jerseynamecolorr", "teamcolorprimb", "jerseyrenderingdetailmaptype",
+        "jerseynameoutlinecolorg", "jerseynumbercolorsecb", "jerseynamecolorb",
+        "jerseynumbercolorterb", "teamcolortertg", "shortsnumbercolorsecr",
+        "jerseybacknamefontcase", "teamkittypetechid", "powid", "isinheritbasedetailmap",
+        "islocked", "numberfonttype", "shortstemplateindex", "jerseynamefonttype",
+        "teamcolorprimpercent", "isgeneric", "teamcolorsecpercent", "year",
+        "jerseytemplateindex", "captainarmband", "teamtechid", "isembargoed",
+        "hasadvertisingkit", "jerseynameoutlinewidth", "dlc", "teamcolortertpercent",
+        "armbandtype", "shortsnumberfonttype", "shortstyle", "jerseyfit",
+        "sockstemplateindex", "jerseyrestriction"
+      ],
     templates: [
-      "17031,0,1,220,74,0,0,203,220,220,12,29,12,220,29,12,12,220,0,12,308,220,0,1,29,220,0,12,117,12,29,200,0,12,0,0,12,220,29,0,12,199,220,12,29,12,0,0,-1,0,0,84,44,64,22,0,100,{team_id},0,0,2,0,100,0,230,0,0,0",
-      "17032,0,1,220,74,0,0,203,220,220,12,29,12,220,29,12,12,220,0,12,308,220,0,1,29,220,0,12,117,12,29,200,0,12,0,0,12,220,29,0,12,199,220,12,29,12,0,1,-1,0,0,84,44,64,22,0,100,{team_id},0,0,2,0,100,0,230,0,0,0",
-      "17033,0,1,220,74,0,0,203,220,220,12,29,12,220,29,12,12,220,0,12,308,220,0,1,29,220,0,12,117,12,29,200,0,12,0,0,12,220,29,0,12,199,220,12,29,12,0,2,-1,0,0,84,44,64,22,0,100,{team_id},0,0,2,0,100,0,230,0,0,0"
+        "{startingKitId},0,1,30,230,0,0,220,220,220,220,19,220,234,230,12,12,45,1,12,13,220,0,1,210,220,0,12,230,220,230,220,0,220,230,0,220,220,51,0,12,220,220,12,230,220,0,0,-1,0,0,262,0,135,49,0,44,0,0,13,{teamid},0,0,2,0,88,1,262,0,0,0,0",
+        "{startingKitId},0,1,30,230,0,0,220,220,220,220,19,220,234,230,12,12,45,1,12,13,220,0,1,210,220,0,12,230,220,230,220,0,220,230,0,220,220,51,0,12,220,220,12,230,220,0,1,-1,0,0,262,0,135,49,0,44,0,0,13,{teamid},0,0,2,0,88,1,262,0,0,0,0",
+        "{startingKitId},0,1,30,230,0,0,220,220,220,220,19,220,234,230,12,12,45,1,12,13,220,0,1,210,220,0,12,230,220,230,220,0,220,230,0,220,220,51,0,12,220,220,12,230,220,0,2,-1,0,0,262,0,135,49,0,44,0,0,13,{teamid},0,0,2,0,88,1,262,0,0,0,0"
     ]
   },
   teammentality: {
