@@ -19,6 +19,8 @@ export default function TeamMaker() {
   const [url, setUrl] = useState("");
   const [mode, setMode] = useState("league");
   const [deepFetch, setDeepFetch] = useState(false);
+  const [startTeamId, setStartTeamId] = useState("1001");
+  const [startPlayerId, setStartPlayerId] = useState("200000");
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeProgress, setScrapeProgress] = useState(0);
   const [scrapeLogs, setScrapeLogs] = useState(["• Scraper module initialized. Awaiting URL."]);
@@ -52,14 +54,16 @@ export default function TeamMaker() {
   const handleStartScrape = async () => {
     if (!url.trim()) { logScrape("⚠️ Error: Please enter a Transfermarkt URL."); return; }
     
+    const teamId = parseInt(startTeamId, 10) || 1001;
+    const playerId = parseInt(startPlayerId, 10) || 200000;
+    
     setIsScraping(true);
     setScrapeProgress(0);
     setRawScrapeData(null);
-    logScrape(`🚀 Commencing extraction — Mode: ${mode.toUpperCase()} | Deep Fetch: ${deepFetch ? "ON" : "OFF"}`);
+    logScrape(`🚀 Commencing extraction — Mode: ${mode.toUpperCase()} | Deep Fetch: ${deepFetch ? "ON" : "OFF"} | Team ID: ${teamId} | Player ID: ${playerId}`);
 
     try {
-      // Pass deepFetch to the scraper
-      const scraper = await runScraper(url.trim(), mode, deepFetch, logScrape, setScrapeProgress);
+      const scraper = await runScraper(url.trim(), mode, deepFetch, logScrape, setScrapeProgress, teamId, playerId);
       scraperControl.current = scraper.stop;
       
       const { teams, players } = scraper.result;
@@ -67,7 +71,7 @@ export default function TeamMaker() {
 
       setRawScrapeData({ teams, players });
       setScrapeProgress(100);
-      logScrape(`✅ Extraction Complete! ${players.length} players locked.`);
+      logScrape(`✅ Extraction Complete! ${players.length} players across ${teams.length} teams locked.`);
 
     } catch (e) {
       logScrape(`❌ Fatal Error: ${e.message}`);
@@ -159,6 +163,19 @@ export default function TeamMaker() {
     logProcess("✅ Master Database downloaded successfully!");
   };
 
+  // Shared input style
+  const inputStyle = {
+    width: "100%",
+    padding: "0.75rem 1rem",
+    background: "rgba(0,0,0,0.2)",
+    border: "1px solid var(--glass-border)",
+    borderRadius: '8px',
+    color: "#fff",
+    outline: "none",
+    fontFamily: "'Poppins', sans-serif",
+    fontSize: '0.9rem'
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', maxWidth: '1100px' }}>
       
@@ -189,15 +206,18 @@ export default function TeamMaker() {
           </div>
           
           <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
+            
+            {/* Target URL */}
             <div>
               <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>TARGET URL</label>
               <input 
                 type="text" value={url} onChange={e => setUrl(e.target.value)} disabled={isScraping}
                 placeholder="https://www.transfermarkt.com/..."
-                style={{ width: "100%", padding: "1rem", background: "rgba(0,0,0,0.2)", border: "1px solid var(--glass-border)", borderRadius: '8px', color: "#fff", outline: "none" }} 
+                style={inputStyle} 
               />
             </div>
 
+            {/* Scraping Mode */}
             <div>
               <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>SCRAPING MODE</label>
               <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -226,6 +246,31 @@ export default function TeamMaker() {
               </label>
             </div>
 
+            {/* Starting IDs */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>
+                  START TEAM ID
+                </label>
+                <input 
+                  type="number" value={startTeamId} onChange={e => setStartTeamId(e.target.value)} disabled={isScraping}
+                  placeholder="1001"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>
+                  START PLAYER ID
+                </label>
+                <input 
+                  type="number" value={startPlayerId} onChange={e => setStartPlayerId(e.target.value)} disabled={isScraping}
+                  placeholder="200000"
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
             <div style={{ display: "flex", gap: "0.5rem", marginTop: 'auto' }}>
               <button 
                 onClick={handleStartScrape} disabled={isScraping} className="btn-primary"
@@ -240,7 +285,7 @@ export default function TeamMaker() {
               </button>
             </div>
 
-            {/* Step 1 Progress & Export */}
+            {/* Progress Bar */}
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", marginBottom: "-1rem" }}>
               <span style={{ color: "#555" }}>{isScraping ? "RUNNING" : "IDLE"}</span>
               <span style={{ color: "var(--accent-color)" }}>{scrapeProgress}%</span>
@@ -249,6 +294,7 @@ export default function TeamMaker() {
               <motion.div animate={{ width: `${scrapeProgress}%` }} transition={{ duration: 0.3 }} style={{ height: "100%", background: "var(--accent-color)" }} />
             </div>
 
+            {/* Download Raw */}
             <AnimatePresence>
               {rawScrapeData && !isScraping && (
                 <motion.button 
@@ -260,6 +306,7 @@ export default function TeamMaker() {
               )}
             </AnimatePresence>
 
+            {/* Logs */}
             <div style={{ background: 'rgba(0,0,0,0.6)', borderRadius: '8px', padding: '1rem', height: '120px', overflowY: 'auto', border: '1px solid var(--glass-border)' }}>
               {scrapeLogs.map((log, i) => (
                 <div key={i} style={{ color: log.includes('❌') ? '#ff4444' : log.includes('✅') ? 'var(--accent-color)' : '#8a8d98', fontSize: '0.8rem', marginBottom: '4px', fontFamily: 'monospace' }}>
@@ -282,6 +329,7 @@ export default function TeamMaker() {
 
           <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
             
+            {/* File Upload */}
             <motion.div 
               onClick={() => fileInputRef.current.click()}
               whileHover={{ scale: 1.01, borderColor: 'var(--accent-color)', backgroundColor: 'rgba(0, 255, 204, 0.05)' }}
@@ -299,6 +347,7 @@ export default function TeamMaker() {
               <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Drop your exported .xlsx from Step 1 here</p>
             </motion.div>
 
+            {/* Process Button */}
             <button 
               onClick={handleProcessDb} disabled={!uploadedFile || isProcessing} className="btn-primary"
               style={{ width: '100%', marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
@@ -306,7 +355,7 @@ export default function TeamMaker() {
               {isProcessing ? "COMPILING TABLES..." : "PROCESS EA DATABASE"}
             </button>
 
-            {/* Step 2 Export */}
+            {/* Export Final */}
             <AnimatePresence>
               {finalDbData && !isProcessing && (
                 <motion.button 
@@ -318,6 +367,7 @@ export default function TeamMaker() {
               )}
             </AnimatePresence>
 
+            {/* Logs */}
             <div style={{ background: 'rgba(0,0,0,0.6)', borderRadius: '8px', padding: '1rem', height: '120px', overflowY: 'auto', border: '1px solid var(--glass-border)' }}>
               {processLogs.map((log, i) => (
                 <div key={i} style={{ color: log.includes('❌') ? '#ff4444' : log.includes('✅') ? 'var(--accent-color)' : '#8a8d98', fontSize: '0.8rem', marginBottom: '4px', fontFamily: 'monospace' }}>

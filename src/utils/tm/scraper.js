@@ -1,6 +1,6 @@
 // /────────────────────── src/utils/tm/scraper.js ───────────────────────/
 
-export async function runScraper(url, mode, deepFetch, log, onProgress) {
+export async function runScraper(url, mode, deepFetch, log, onProgress, startTeamId = 1001, startPlayerId = 200000) {
   let isRunning = true;
   const state = {
     teams: [],
@@ -14,8 +14,7 @@ export async function runScraper(url, mode, deepFetch, log, onProgress) {
   const safeRequest = async (targetUrl, retryCount = 0) => {
     if (retryCount >= 3 || !isRunning) return null;
     try {
-      // Dynamic delay to prevent Cloudflare blocking
-      await new Promise(r => setTimeout(r, 800 + Math.random() * 700));
+      await new Promise(r => setTimeout(r, 1500 + Math.random() * 1500));
       
       let proxyUrl = targetUrl.replace("https://www.transfermarkt.com", "/tm");
       const res = await fetch(proxyUrl);
@@ -23,13 +22,22 @@ export async function runScraper(url, mode, deepFetch, log, onProgress) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
       
-      if (text.includes("Checking your browser") || text.includes("cf-browser-verification")) {
-        await new Promise(r => setTimeout(r, 4000));
+      if (
+        text.includes("Checking your browser") ||
+        text.includes("cf-browser-verification") ||
+        text.includes("Just a moment") ||
+        text.includes("challenge-platform") ||
+        text.includes("cf-challenge") ||
+        text.length < 500
+      ) {
+        log(`  ⚠️ Anti-bot challenge. Retry ${retryCount + 1}/3...`);
+        await new Promise(r => setTimeout(r, 5000));
         return safeRequest(targetUrl, retryCount + 1);
       }
       return text;
     } catch (e) {
-      await new Promise(r => setTimeout(r, 3000));
+      log(`  ⚠️ Request error: ${e.message}. Retry ${retryCount + 1}/3...`);
+      await new Promise(r => setTimeout(r, 4000));
       return safeRequest(targetUrl, retryCount + 1);
     }
   };
@@ -50,12 +58,52 @@ export async function runScraper(url, mode, deepFetch, log, onProgress) {
     return p.length <= 3 ? p.toUpperCase() : p.charAt(0).toUpperCase() + p.slice(1);
   };
 
+  // ──────────────────────────────────────────────────────────────────────
+  // Build squad URL
+  //   seasonOverride = number  → /saison_id/XXXX/plus/1
+  //   seasonOverride = null    → /plus/1  (TM default/latest season)
+  // ──────────────────────────────────────────────────────────────────────
+  const buildSquadUrl = (teamUrl, directSquadUrl = null, seasonOverride = null) => {
+    let baseUrl;
+
+    if (directSquadUrl) {
+      baseUrl = directSquadUrl;
+      if (baseUrl.startsWith('/')) {
+        baseUrl = 'https://www.transfermarkt.com' + baseUrl;
+      }
+    } else {
+      let rel = teamUrl;
+      if (rel.startsWith('https://www.transfermarkt.com')) {
+        rel = rel.replace('https://www.transfermarkt.com', '');
+      }
+
+      const match = rel.match(/^(\/[^/]+)\/[^/]+\/verein\/(\d+)/);
+      if (match) {
+        baseUrl = `https://www.transfermarkt.com${match[1]}/kader/verein/${match[2]}`;
+      } else {
+        let fb = rel.replace(/\/spielplan\//, '/kader/').replace(/\/startseite\//, '/kader/');
+        baseUrl = 'https://www.transfermarkt.com' + fb;
+      }
+    }
+
+    // Strip any existing saison_id
+    baseUrl = baseUrl.replace(/\/saison_id\/\d+/, '');
+
+    if (seasonOverride) {
+      return baseUrl + `/saison_id/${seasonOverride}/plus/1`;
+    }
+    return baseUrl + '/plus/1';
+  };
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Get teams from the league / cup / world-cup listing page
+  // ──────────────────────────────────────────────────────────────────────
   const getTeams = async () => {
     const html = await safeRequest(url);
-    if (!html) return {};
+    if (!html) return [];
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
-    const teams = {};
+    const teams = [];
 
     if (mode === 'worldcup') {
       const matchBoxes = doc.querySelectorAll('.box.pokalWettbewerbSpieltagsbox');
@@ -64,39 +112,110 @@ export async function runScraper(url, mode, deepFetch, log, onProgress) {
         box.querySelectorAll('tr.begegnungZeile').forEach(row => {
           ['heim', 'gast'].forEach(side => {
             const a = row.querySelector(`.verein-${side} .vereinsname a`);
-            if (a && a.title && a.href) teams[a.title] = a.href;
+            if (a && a.title && a.href) {
+              teams.push({
+                name: a.title,
+                href: a.href,
+                squadUrl: null,
+                nationality: a.title.trim()
+              });
+            }
           });
         });
       }
+
     } else if (mode === 'cup') {
       doc.querySelectorAll('.large-6.columns, .large-12.columns').forEach(col => {
         const tbody = col.querySelector('table.items tbody');
         if (tbody) {
           Array.from(tbody.querySelectorAll('tr')).slice(0, 4).forEach(row => {
             const a = row.querySelector('td.no-border-links.hauptlink a');
-            if (a && a.title && a.href) teams[a.title] = a.href;
+            if (a && a.title && a.href) {
+              teams.push({ name: a.title, href: a.href, squadUrl: null, nationality: '' });
+            }
           });
         }
       });
+
     } else {
-      const tbody = doc.querySelector('table.items tbody');
-      if (tbody) {
+      // ── LEAGUE MODE ──
+      const tables = doc.querySelectorAll('table.items');
+
+      for (const table of tables) {
+        const tbody = table.querySelector('tbody');
+        if (!tbody) continue;
+
+        const hasTeamLinks = tbody.querySelector('td.hauptlink a[href*="/verein/"]');
+        if (!hasTeamLinks) continue;
+
         tbody.querySelectorAll('tr.odd, tr.even').forEach(row => {
-          const a = row.querySelector('td.hauptlink.no-border-links a');
-          if (a && a.title && a.href) teams[a.title] = a.href;
+          const teamCell = row.querySelector('td.hauptlink');
+          if (!teamCell) return;
+
+          const teamLink = teamCell.querySelector('a[href*="/verein/"]');
+          if (!teamLink || !teamLink.title || !teamLink.href) return;
+
+          const teamName = teamLink.title.trim();
+
+          let directSquadUrl = null;
+          const squadLinks = row.querySelectorAll('a[href*="/kader/"]');
+          if (squadLinks.length > 0) {
+            directSquadUrl = squadLinks[0].getAttribute('href');
+          }
+
+          let teamNationality = '';
+          const flag = row.querySelector('img.flaggenrahmen');
+          if (flag && flag.title) {
+            teamNationality = flag.title.trim();
+          }
+
+          teams.push({
+            name: teamName,
+            href: teamLink.href,
+            squadUrl: directSquadUrl,
+            nationality: teamNationality
+          });
+        });
+
+        if (teams.length > 0) break;
+      }
+
+      if (teams.length === 0) {
+        log("⚠️ Standard table detection failed. Attempting broad link scan...");
+        const seen = new Set();
+        doc.querySelectorAll('a[href*="/verein/"][title]').forEach(a => {
+          const href = a.getAttribute('href');
+          if (href && !href.includes('#') && !href.startsWith('javascript') && a.title.trim()) {
+            const name = a.title.trim();
+            if (!seen.has(name)) {
+              seen.add(name);
+              teams.push({ name, href, squadUrl: null, nationality: '' });
+            }
+          }
         });
       }
     }
+
     return teams;
   };
 
-  const buildSquadUrl = (teamUrl) => {
-    const match = teamUrl.match(/^(\/[^/]+)\/[^/]+\/verein\/(\d+)/);
-    if (match) return `https://www.transfermarkt.com${match[1]}/kader/verein/${match[2]}/saison_id/2026/plus/1`;
-    let fb = teamUrl.replace(/\/spielplan\//, '/kader/').replace(/\/startseite\//, '/kader/').replace(/\/saison_id\/\d+/, '');
-    return `https://www.transfermarkt.com${fb}/saison_id/2026/plus/1`;
-  };
-
+  // ──────────────────────────────────────────────────────────────────────
+  // Parse the squad list HTML into player objects
+  //
+  // Per-row td.zentriert layout (expanded /plus/1 view):
+  //   [0] Jersey number        (class="zentriert rueckennummer ...")
+  //   [1] Name + position      (class="posrela" — NOT zentriert)
+  //   [2] Birthdate + age      (e.g. "09/10/1998 (27)")
+  //   [3] Nationality flag     (img.flaggenrahmen)
+  //   [4] Height               (e.g. "2,04m" or "1,89m")
+  //   [5] Preferred foot       (e.g. "left" / "right")
+  //   [6] Joined date          (e.g. "19/08/2025")
+  //   [7] Previous club badge  (img.wappen)
+  //   [8] Contract expiry      (e.g. "31/07/2030")
+  //   [9] Market value         (class="rechts hauptlink")
+  //
+  // Each field is targeted by its UNIQUE pattern to avoid collisions.
+  // ──────────────────────────────────────────────────────────────────────
   const parseSquadList = (html, teamName) => {
     const players = [];
     const parser = new DOMParser();
@@ -113,13 +232,14 @@ export async function runScraper(url, mode, deepFetch, log, onProgress) {
         Team: teamName, ProfileUrl: ''
       };
 
+      // ── Name & Position (from inline-table) ──
       const inlineTbl = row.querySelector('table.inline-table');
       if (inlineTbl) {
         const trs = inlineTbl.querySelectorAll('tr');
         if (trs[0]) {
           const a = trs[0].querySelector('td.hauptlink a');
           if (a) {
-            p.ProfileUrl = a.getAttribute('href'); 
+            p.ProfileUrl = a.getAttribute('href');
             const fullName = a.textContent.trim().replace(/\s+/g, ' ');
             const parts = fullName.split(' ');
             if (parts.length === 1) {
@@ -138,27 +258,49 @@ export async function runScraper(url, mode, deepFetch, log, onProgress) {
         }
       }
 
-      // Fast-Mode Nationality Logic
+      // ── Scan all td.zentriert cells — match each by UNIQUE pattern ──
+      const zTds = row.querySelectorAll('td.zentriert');
+
+      zTds.forEach(td => {
+        // Skip cells that only contain images (flag, badge, etc.)
+        if (td.querySelector('img')) return;
+
+        const txt = td.textContent.trim();
+
+        // ── Birthdate: ONLY matches "DD/MM/YYYY (age)" — unique pattern ──
+        // e.g. "09/10/1998 (27)"  →  "1998-10-09"
+        // This will NOT match joined dates or contract dates (no parentheses)
+        const birthdateMatch = txt.match(/^(\d{2})\/(\d{2})\/(\d{4})\s*\(\d+\)/);
+        if (birthdateMatch) {
+          p.Birthdate = `${birthdateMatch[3]}-${birthdateMatch[2]}-${birthdateMatch[1]}`;
+          return;
+        }
+
+        // ── Height: matches "X,XXm" or "X.XXm" (comma OR dot decimal) ──
+        // e.g. "2,04m" or "1,89m" or "1.85m"
+        const heightMatch = txt.match(/^(\d+[,.]\d+)m$/);
+        if (heightMatch) {
+          p.Height = Math.round(parseFloat(heightMatch[1].replace(',', '.')) * 100);
+          return;
+        }
+
+        // ── Preferred Foot: exact match on known values ──
+        const footLower = txt.toLowerCase();
+        if (footLower === 'right' || footLower === 'left' || footLower === 'both') {
+          p.PreferredFoot = txt.charAt(0).toUpperCase() + txt.slice(1);
+          return;
+        }
+      });
+
+      // ── Nationality ──
       if (mode === 'worldcup') {
-        // In World Cup mode, the team name IS the nationality
         p.Nationality = teamName;
       } else {
-        // Fallback to the flag image title on the squad list
         const flag = row.querySelector('img.flaggenrahmen');
         if (flag && flag.title) p.Nationality = flag.title;
       }
 
-      const zTds = row.querySelectorAll('td.zentriert');
-      zTds.forEach(td => {
-        const txt = td.textContent.trim();
-        if (/^\d{2}\/\d{2}\/\d{4}/.test(txt)) p.Birthdate = txt.split('(')[0].trim().split('/').reverse().join('-');
-        if (/^\d[,.]?\d+m$/.test(txt)) p.Height = Math.round(parseFloat(txt.replace('m', '').replace(',', '.')) * 100);
-        if (['right', 'left', 'both'].includes(txt.toLowerCase())) p.PreferredFoot = txt.charAt(0).toUpperCase() + txt.slice(1);
-      });
-      
-      // Default foot if not found in squad list
-      if (!p.PreferredFoot) p.PreferredFoot = Math.random() < 0.15 ? 'Left' : 'Right';
-
+      // ── Market Value ──
       const mv = row.querySelector('td.rechts.hauptlink a');
       if (mv) {
         p.MarketValue = mv.textContent.trim();
@@ -166,7 +308,7 @@ export async function runScraper(url, mode, deepFetch, log, onProgress) {
         let mult = 1;
         if (valStr.includes('k')) { valStr = valStr.replace('k', ''); mult = 1000; }
         else if (valStr.includes('m')) { valStr = valStr.replace('m', ''); mult = 1000000; }
-        
+
         let value = parseFloat(valStr) * mult;
         if (!isNaN(value)) {
           value = Math.max(10000, Math.min(value, 200000000));
@@ -189,7 +331,7 @@ export async function runScraper(url, mode, deepFetch, log, onProgress) {
     infoLabels.forEach(label => {
       const text = label.textContent.trim().toLowerCase();
       const valueSpan = label.nextElementSibling;
-      
+
       if (valueSpan && valueSpan.classList.contains('info-table__content--bold')) {
         if (text.includes('citizenship:')) {
           const firstImg = valueSpan.querySelector('img.flaggenrahmen');
@@ -199,7 +341,7 @@ export async function runScraper(url, mode, deepFetch, log, onProgress) {
             const textContent = valueSpan.textContent.trim().split('\n')[0].trim();
             if (textContent) player.Nationality = textContent;
           }
-        } 
+        }
         else if (text.includes('foot:')) {
           const footText = valueSpan.textContent.trim().toLowerCase();
           if (['right', 'left', 'both'].includes(footText)) {
@@ -210,65 +352,122 @@ export async function runScraper(url, mode, deepFetch, log, onProgress) {
     });
   };
 
+  // ──────────────────────────────────────────────────────────────────────
+  // MAIN EXTRACTION LOOP
+  // ──────────────────────────────────────────────────────────────────────
   log("Initiating web extraction protocol...");
   const scrapedTeams = await getTeams();
-  const teamEntries = Object.entries(scrapedTeams);
-  if (!teamEntries.length) throw new Error("No teams found. Ensure mode matches URL.");
-  
-  log(`Detected ${teamEntries.length} target teams.`);
-  let playerIdCounter = 200000; 
-  let teamIdCounter = 1001;
 
-  for (let i = 0; i < teamEntries.length; i++) {
+  if (!scrapedTeams.length) throw new Error("No teams found. Ensure mode matches URL.");
+  log(`Detected ${scrapedTeams.length} target teams.`);
+
+  if (startTeamId) log(`Team ID starting point: ${startTeamId}`);
+  if (startPlayerId) log(`Player ID starting point: ${startPlayerId}`);
+
+  let playerIdCounter = startPlayerId;
+  let teamIdCounter = startTeamId;
+
+  for (let i = 0; i < scrapedTeams.length; i++) {
     if (!isRunning) break;
-    const [teamName, teamUrl] = teamEntries[i];
-    log(`Scraping Squad List: ${teamName}...`);
-    
-    const squadHtml = await safeRequest(buildSquadUrl(teamUrl));
-    if (!squadHtml) {
+    const { name: teamName, href: teamUrl, squadUrl: directSquadUrl, nationality: teamNationality } = scrapedTeams[i];
+
+    const natLog = (mode === 'league' && teamNationality) ? ` [${teamNationality}]` : '';
+    log(`Scraping Squad List: ${teamName}${natLog}...`);
+
+    // ── Build URL strategy list ──
+    const urlStrategies = [
+      { url: buildSquadUrl(teamUrl, directSquadUrl, 2026), label: '2026' }
+    ];
+
+    if (directSquadUrl) {
+      const seasonMatch = directSquadUrl.match(/saison_id\/(\d+)/);
+      if (seasonMatch && seasonMatch[1] !== '2026') {
+        urlStrategies.push({
+          url: buildSquadUrl(teamUrl, directSquadUrl, seasonMatch[1]),
+          label: `original (${seasonMatch[1]})`
+        });
+      }
+    }
+
+    const teamSeasonMatch = teamUrl.match(/saison_id\/(\d+)/);
+    if (teamSeasonMatch && teamSeasonMatch[1] !== '2026') {
+      const alreadyAdded = urlStrategies.some(s => s.label.includes(teamSeasonMatch[1]));
+      if (!alreadyAdded) {
+        urlStrategies.push({
+          url: buildSquadUrl(teamUrl, directSquadUrl, teamSeasonMatch[1]),
+          label: `team-page (${teamSeasonMatch[1]})`
+        });
+      }
+    }
+
+    urlStrategies.push({
+      url: buildSquadUrl(teamUrl, directSquadUrl),
+      label: 'default (no season)'
+    });
+
+    // ── Try each URL strategy until we find players ──
+    let players = [];
+
+    for (const strategy of urlStrategies) {
+      if (!isRunning) break;
+      const shortUrl = strategy.url.replace("https://www.transfermarkt.com", "");
+      log(`  ↳ Trying [${strategy.label}]: ${shortUrl}`);
+
+      const squadHtml = await safeRequest(strategy.url);
+      if (!squadHtml) {
+        log(`  ↳ Request failed (null).`);
+        continue;
+      }
+
+      players = parseSquadList(squadHtml, teamName);
+      if (players.length > 0) {
+        log(`  ↳ ✓ ${players.length} players found [${strategy.label}]`);
+        break;
+      }
+
+      log(`  ↳ No player rows found on that page.`);
+    }
+
+    if (!players.length) {
       state.errorTeams[teamName] = teamUrl;
-      log(`⚠️ Failed to fetch squad list for ${teamName}`);
+      log(`⚠️ Missing data for ${teamName} — all URL strategies exhausted.`);
       continue;
     }
 
-    const players = parseSquadList(squadHtml, teamName);
-    
-    if (players.length) {
-      if (deepFetch) {
-        log(`Deep fetching detailed profiles for ${players.length} players...`);
-        for (let j = 0; j < players.length; j++) {
-          if (!isRunning) break;
-          const p = players[j];
-          
-          if (p.ProfileUrl) {
-            const profileHtml = await safeRequest(`https://www.transfermarkt.com${p.ProfileUrl}`);
-            if (profileHtml) extractPlayerDetails(profileHtml, p);
-          }
-          
-          p.playerid = playerIdCounter++;
-          delete p.ProfileUrl; 
+    if (deepFetch) {
+      log(`Deep fetching detailed profiles for ${players.length} players...`);
+      for (let j = 0; j < players.length; j++) {
+        if (!isRunning) break;
+        const p = players[j];
 
-          const teamProgress = (i / teamEntries.length) * 100;
-          const playerProgress = ((j + 1) / players.length) * (100 / teamEntries.length);
-          onProgress(Math.round(teamProgress + playerProgress));
+        if (p.ProfileUrl) {
+          const profileHtml = await safeRequest(`https://www.transfermarkt.com${p.ProfileUrl}`);
+          if (profileHtml) extractPlayerDetails(profileHtml, p);
         }
-      } else {
-        // Fast Mode: Just assign IDs, cleanup, and bump progress
-        players.forEach(p => { 
-          p.playerid = playerIdCounter++; 
-          delete p.ProfileUrl;
-        });
-        onProgress(Math.round(((i + 1) / teamEntries.length) * 100));
-      }
 
-      state.players.push(...players);
-      state.successfulTeams.add(teamName);
-      state.teams.push({ teamid: teamIdCounter++, teamname: teamName });
-      log(`✓ Locked ${players.length} players for ${teamName}`);
+        p.playerid = playerIdCounter++;
+        delete p.ProfileUrl;
+
+        const teamProgress = (i / scrapedTeams.length) * 100;
+        const playerProgress = ((j + 1) / players.length) * (100 / scrapedTeams.length);
+        onProgress(Math.round(teamProgress + playerProgress));
+      }
     } else {
-      state.errorTeams[teamName] = teamUrl;
-      log(`⚠️ Missing data for ${teamName}`);
+      players.forEach(p => {
+        p.playerid = playerIdCounter++;
+        delete p.ProfileUrl;
+      });
+      onProgress(Math.round(((i + 1) / scrapedTeams.length) * 100));
     }
+
+    state.players.push(...players);
+    state.successfulTeams.add(teamName);
+    state.teams.push({
+      teamid: teamIdCounter++,
+      teamname: teamName,
+      teamnationality: teamNationality || ''
+    });
+    log(`✓ Locked ${players.length} players for ${teamName}`);
   }
 
   return { result: state, stop };

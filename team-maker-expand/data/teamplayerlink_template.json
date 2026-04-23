@@ -1,6 +1,0 @@
-{
-  "columns": [
-    "leaguegoals", "isamongtopscorers", "yellows", "isamongtopscorersinteam", "jerseynumber", "position", "artificialkey", "teamid", "leaguegoalsprevmatch", "injury", "leagueappearances", "istopscorer", "leaguegoalsprevthreematches", "playerid", "form", "reds"
-  ],
-  "template": "0,0,0,0,{jerseynumber},{position},{artificialkey},{teamid},0,0,0,0,0,{playerid},3,0"
-}
