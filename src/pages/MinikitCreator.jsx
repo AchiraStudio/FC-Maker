@@ -227,14 +227,28 @@ export default function MinikitCreator() {
       ctx.strokeStyle = settings.borderColor;
       ctx.lineWidth = settings.borderWidth;
       ctx.stroke();
-      canvas.toBlob(resolve, 'image/png');
+      
+      const finalCanvas = document.createElement('canvas');
+      finalCanvas.width = 256;
+      finalCanvas.height = 256;
+      const finalCtx = finalCanvas.getContext('2d');
+      finalCtx.drawImage(canvas, 0, 0, 256, 256);
+      
+      finalCanvas.toBlob(resolve, 'image/png');
     });
   };
 
   const saveCurrentEdit = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = 256;
+    finalCanvas.height = 256;
+    const finalCtx = finalCanvas.getContext('2d');
+    finalCtx.drawImage(canvas, 0, 0, 256, 256);
+    
+    const blob = await new Promise(resolve => finalCanvas.toBlob(resolve, 'image/png'));
     
     let newFiles = [...uploadedFiles];
     newFiles[editingIndex] = {
@@ -404,7 +418,7 @@ export default function MinikitCreator() {
       <div>
         <h1 style={{ fontSize: '2.5rem', fontWeight: '300', marginBottom: '0.25rem' }}>Minikit Creator</h1>
         <p style={{ color: 'var(--text-muted)' }}>
-          Upload crests, apply custom border shapes, scale, and position – then export as 1024x1024 PNGs inside a `kits/` folder.
+          Upload crests, apply custom border shapes, scale, and position – then export as 256x256 PNGs inside a `kits/` folder.
         </p>
       </div>
 
