@@ -355,9 +355,14 @@ export function processData(teams, players, isNationalTeam = false, startManager
     // Default team (111592) for ALL players — jersey numbers unique across default-team pool too
     const defaultTeamUsedNumbers = new Set();
     teamPlayers.forEach(p => {
-      const group = posToJerseyGroup(p.NumericPosition ?? 14);
-      const jerseyNum = pickJerseyNumber(group, defaultTeamUsedNumbers);
-      results.teamplayerlink.push([0,0,0,0,jerseyNum,0,0,111592,0,0,0,0,0,p.playerid,3,0]);
+      const isScrapedVal = getCol(p, 'isScraped');
+      const isExistingPlayer = isScrapedVal === false || String(isScrapedVal).toLowerCase() === 'false';
+      
+      if (!isExistingPlayer) {
+        const group = posToJerseyGroup(p.NumericPosition ?? 14);
+        const jerseyNum = pickJerseyNumber(group, defaultTeamUsedNumbers);
+        results.teamplayerlink.push([0,0,0,0,jerseyNum,0,0,111592,0,0,0,0,0,p.playerid,3,0]);
+      }
     });
 
     // 7. Managers
