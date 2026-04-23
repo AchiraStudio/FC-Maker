@@ -1,12 +1,113 @@
 // /───────────────────── src/utils/tm/processor.js ──────────────────────/
 
 import { position_mapping, templates, random_values, names_data } from './templates';
+import { nations } from '../rm26/resources.js';
 
-export function processData(teams, players, isNationalTeam = false) {
+// ── Jersey number pools by position group (priority-ordered) ──────────────
+const JERSEY_POOLS = {
+  GK:  { primary: [1, 99], secondary: [12, 13, 22, 23, 31, 32, 33] },
+  CB:  { primary: [2, 3, 4, 5], secondary: [15, 20, 24, 25, 26, 29] },
+  FB:  { primary: [2, 3, 12, 13], secondary: [21, 22, 23, 24, 25, 26, 29] }, // RB/LB/RWB/LWB
+  CDM: { primary: [6, 8, 5, 16, 18, 14], secondary: [4, 15, 24, 28, 29] },
+  CM:  { primary: [6, 8, 16, 18, 14, 5], secondary: [4, 15, 24, 28, 29] },
+  ATT_MID: { primary: [10, 11, 7, 17, 21, 19], secondary: [6, 8, 14, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30] }, // CAM/LM/RM/LW/RW
+  ST:  { primary: [9, 19, 7, 17], secondary: [10, 11, 21, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30] },
+};
+
+// Map numeric position → pool key
+const posToJerseyGroup = (numPos) => {
+  if (numPos === 0) return 'GK';
+  if ([4, 5, 6].includes(numPos)) return 'CB';
+  if ([3, 7, 2, 8].includes(numPos)) return 'FB';
+  if ([9, 10, 11].includes(numPos)) return 'CDM';
+  if ([13, 14, 15].includes(numPos)) return 'CM';
+  if ([12, 16, 17, 18, 19, 23, 27].includes(numPos)) return 'ATT_MID';
+  if ([20, 21, 22, 24, 25, 26].includes(numPos)) return 'ST';
+  return 'CM'; // fallback
+};
+
+/**
+ * Pick a jersey number for a player respecting position preference + per-team uniqueness.
+ * @param {string} group - Pool key from posToJerseyGroup
+ * @param {Set<number>} usedNumbers - Numbers already assigned in this team
+ */
+const pickJerseyNumber = (group, usedNumbers) => {
+  const pool = JERSEY_POOLS[group];
+  // Try primary picks first
+  for (const n of pool.primary) {
+    if (!usedNumbers.has(n)) { usedNumbers.add(n); return n; }
+  }
+  // Then secondary
+  for (const n of pool.secondary) {
+    if (!usedNumbers.has(n)) { usedNumbers.add(n); return n; }
+  }
+  // Fallback: any number 1-99 not yet used
+  for (let n = 1; n <= 99; n++) {
+    if (!usedNumbers.has(n)) { usedNumbers.add(n); return n; }
+  }
+  return 99; // absolute fallback
+};
+
+// ── Formation position-group numeric position IDs ──────────────────────────
+const DEF_POSITIONS   = new Set([3, 4, 5, 6, 7, 2, 8]);   // RB/CB/LB/WBs
+const MID_POSITIONS   = new Set([9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]); // CDM/CM/CAM/RM/LM
+const ATT_POSITIONS   = new Set([20, 21, 22, 23, 24, 25, 26, 27]); // ST/CF/LW/RW
+
+/**
+ * Parse a formation name (e.g. "4-2-3-1") into player counts per group.
+ * Rule: first segment = def, last segment = att, all middle segments summed = mid.
+ */
+const parseFormationCounts = (formationName) => {
+  if (!formationName || typeof formationName !== 'string') return { def: 4, mid: 3, att: 3 };
+  const parts = formationName.replace(/[^0-9-]/g, '').split('-').map(Number).filter(n => !isNaN(n) && n > 0);
+  if (parts.length < 2) return { def: 4, mid: 3, att: 3 };
+  return {
+    def: parts[0],
+    att: parts[parts.length - 1],
+    mid: parts.slice(1, -1).reduce((s, n) => s + n, 0),
+  };
+};
+
+/**
+ * Calculate matchday & season ratings from formation + player OVRs.
+ */
+const calcMatchdayRatings = (teamPlayers, formationName) => {
+  const avg = (arr) => arr.length ? Math.round(arr.reduce((s, v) => s + v, 0) / arr.length) : 63;
+  const getOvr = (p) => parseInt(p.OVR || p.ovr || p.Ovr || 63, 10) || 63;
+  const vary = (v) => Math.min(99, Math.max(1, v + Math.floor(Math.random() * 7) - 3));
+
+  const { def: defCount, mid: midCount, att: attCount } = parseFormationCounts(formationName);
+
+  const sorted = (set, count) =>
+    [...teamPlayers].filter(p => set.has(p.NumericPosition))
+      .sort((a, b) => getOvr(b) - getOvr(a)).slice(0, count);
+
+  const topGk  = teamPlayers.filter(p => p.NumericPosition === 0).slice(0, 1);
+  const topDef = sorted(DEF_POSITIONS, defCount);
+  const topMid = sorted(MID_POSITIONS, midCount);
+  const topAtt = sorted(ATT_POSITIONS, attCount);
+
+  const defRating = avg(topDef.map(getOvr));
+  const midRating = avg(topMid.map(getOvr));
+  const attRating = avg(topAtt.map(getOvr));
+  const allRating = avg([...topGk, ...topDef, ...topMid, ...topAtt].map(getOvr));
+
+  return {
+    overall: allRating, attack: attRating, midfield: midRating, defense: defRating,
+    matchdayOverall: vary(allRating), matchdayAttack: vary(attRating),
+    matchdayMidfield: vary(midRating), matchdayDefense: vary(defRating),
+  };
+};
+
+export function processData(teams, players, isNationalTeam = false, startManagerId = null, startTeamKitId = null, leagueId = 0, artificialId = 0) {
   const results = {};
+  // Initialize all sheets including the two new ones
   Object.keys(templates).forEach(key => {
     if (key !== 'common_template_numbers') results[key] = [];
   });
+  // Ensure the new sheets are added (they are now in templates, but double-check)
+  if (!results.team_nations_link) results.team_nations_link = [];
+  if (!results.league_team_links) results.league_team_links = [];
 
   const getCompatiblePositions = (pos) => {
     const map = {
@@ -79,9 +180,17 @@ export function processData(teams, players, isNationalTeam = false) {
     rivalMap[teamId] = nextTeamId;
   });
 
+  // Build nation name → nationid map from resources.js
+  const nationList = nations();
+  const nationNameToId = new Map();
+  nationList.forEach(n => {
+    nationNameToId.set(n.nation.toLowerCase(), n.nationid);
+  });
+
   shuffledTeams.forEach((team, idx) => {
     const teamId = getCol(team, 'teamid');
     const teamName = getCol(team, 'teamname');
+    const teamnationality = getCol(team, 'teamnationality') || '';
     const teamPlayers = processedPlayers.filter(p => p.Team === teamName);
     
     if (teamPlayers.length === 0) return;
@@ -98,11 +207,20 @@ export function processData(teams, players, isNationalTeam = false) {
     }
     if (mainPlayers.length >= 3) specialRoles[4] = mainPlayers[0];
 
-    // 1. Teams
+    // 1. Teams — with calculated matchday ratings
+    const formationTemplate = templates.formations.templates[`template${templateNum}`];
+    const formationRow = formationTemplate ? formationTemplate[0] : '';
+    const fmtCols = templates.formations.columns;
+    const fmtVals = formationRow.replace(/{[^}]+}/g, '0').split(',');
+    const fmtNameIdx = fmtCols.indexOf('formationname');
+    const formationName = fmtNameIdx >= 0 ? fmtVals[fmtNameIdx] : '4-3-3';
+
+    const ratings = calcMatchdayRatings(teamPlayers, formationName);
+
     let tRow = templates.teams.template;
     const tReplacements = {
       teamid: teamId,
-      team_id: teamId,  // FIX: Added team_id
+      team_id: teamId,
       team_name: teamName,
       rightfreekicktakerid: specialRoles[0],
       longkicktakerid: specialRoles[1],
@@ -115,11 +233,32 @@ export function processData(teams, players, isNationalTeam = false) {
       rivalteam: rivalTeamId
     };
     Object.entries(tReplacements).forEach(([k, v]) => tRow = tRow.replace(new RegExp(`\\{${k}\\}`, 'g'), v));
-    results.teams.push(tRow.split(','));
+
+    // Inject matchday ratings into the correct column positions
+    const teamCols = templates.teams.columns;
+    const tVals = tRow.split(',');
+    const setCol = (name, val) => {
+      const i = teamCols.indexOf(name);
+      if (i >= 0) tVals[i] = String(val);
+    };
+    setCol('overallrating',          ratings.overall);
+    setCol('attackrating',           ratings.attack);
+    setCol('midfieldrating',         ratings.midfield);
+    setCol('defenserating',          ratings.defense);
+    setCol('matchdayoverallrating',  ratings.matchdayOverall);
+    setCol('matchdayattackrating',   ratings.matchdayAttack);
+    setCol('matchdaymidfieldrating', ratings.matchdayMidfield);
+    setCol('matchdaydefenserating',  ratings.matchdayDefense);
+    results.teams.push(tVals);
 
     // 2. TeamKits
-    templates.teamkits.templates.forEach(kitTemplate => {
+    templates.teamkits.templates.forEach((kitTemplate, kitIdx) => {
       let kRow = kitTemplate.replace(/{team_id}/g, teamId);
+      if (startTeamKitId !== null) {
+        const kVals = kRow.split(',');
+        kVals[0] = String(startTeamKitId + (idx * 3) + kitIdx);
+        kRow = kVals.join(',');
+      }
       results.teamkits.push(kRow.split(','));
     });
 
@@ -186,15 +325,18 @@ export function processData(teams, players, isNationalTeam = false) {
     Object.entries(tsRoleMapping).forEach(([k, v]) => tsRow = tsRow.replace(new RegExp(`\\{${k}\\}`, 'g'), v));
     results.teamsheet.push(tsRow.split(','));
 
-    // 6. TeamPlayerLink
+    // 6. TeamPlayerLink — position-aware jersey numbers, unique per team
     const posOrder = [[0, 0], [3, 1], [4, 2], [6, 3], [7, 4], [10, 5], [13, 6], [15, 7], [23, 8], [25, 9], [27, 10]];
     const maxMain = isNationalTeam ? 26 : posOrder.length;
     const assignedIdsLink = new Set();
-    
+    const teamUsedNumbers = new Set(); // per-team jersey uniqueness
+
     posOrder.slice(0, maxMain).forEach(([pos, key]) => {
       const pid = assignments[`${pos}_${key}`];
       if (pid) {
-        results.teamplayerlink.push([0,0,0,0,Math.floor(Math.random()*99)+1,pos,key,teamId,0,0,0,0,0,pid,3,0]);
+        const group = posToJerseyGroup(pos);
+        const jerseyNum = pickJerseyNumber(group, teamUsedNumbers);
+        results.teamplayerlink.push([0,0,0,0,jerseyNum,pos,key,teamId,0,0,0,0,0,pid,3,0]);
         assignedIdsLink.add(pid);
       }
     });
@@ -202,35 +344,44 @@ export function processData(teams, players, isNationalTeam = false) {
     if (!isNationalTeam) {
       const subsLink = teamPlayers.filter(p => !assignedIdsLink.has(p.playerid)).slice(0, 10);
       subsLink.forEach((sub, i) => {
-        results.teamplayerlink.push([0,0,0,0,Math.floor(Math.random()*99)+1,28,posOrder.length+i,teamId,0,0,0,0,0,sub.playerid,3,0]);
+        const group = posToJerseyGroup(sub.NumericPosition ?? 14);
+        const jerseyNum = pickJerseyNumber(group, teamUsedNumbers);
+        results.teamplayerlink.push([0,0,0,0,jerseyNum,28,posOrder.length+i,teamId,0,0,0,0,0,sub.playerid,3,0]);
       });
     }
 
-    // FIX: Default team (111592) for ALL players - removed extra 0 (was 17 columns, now 16)
+    // Default team (111592) for ALL players — jersey numbers unique across default-team pool too
+    const defaultTeamUsedNumbers = new Set();
     teamPlayers.forEach(p => {
-      results.teamplayerlink.push([0,0,0,0,Math.floor(Math.random()*99)+1,0,0,111592,0,0,0,0,0,p.playerid,3,0]);
+      const group = posToJerseyGroup(p.NumericPosition ?? 14);
+      const jerseyNum = pickJerseyNumber(group, defaultTeamUsedNumbers);
+      results.teamplayerlink.push([0,0,0,0,jerseyNum,0,0,111592,0,0,0,0,0,p.playerid,3,0]);
     });
 
-    // 7. Managers (Fully Fixed nationality mapping and random attributes)
+    // 7. Managers
     const natCode = randChoice(random_values.nationalities);
     const countryList = Object.keys(names_data);
     
-    // Safely resolve country data, fallback to first country if ID doesn't map
     let countryData = null;
     if (natCode >= 1 && natCode <= countryList.length) {
       countryData = names_data[countryList[natCode - 1]];
     }
-    
-    // Final fallback if nationality ID is out of bounds or country doesn't exist
     if (!countryData || !countryData.first_names) {
       countryData = names_data[countryList[0]] || names_data["England"];
     }
 
     let mRow = templates.managers.template;
+    const managerId = startManagerId !== null
+      ? startManagerId + idx
+      : teamId * 1000;
+    const managerFirstname = randChoice(countryData.first_names);
+    const managerSurname = randChoice(countryData.last_names);
     const mReps = {
-      managerid: teamId * 1000, 
-      firstname: randChoice(countryData.first_names),
-      lastname: randChoice(countryData.last_names),
+      managerid: managerId, 
+      starrating: randChoice([2.5, 3.5, 4.5]),
+      firstname: managerFirstname,
+      surname: managerSurname,
+      commonname: `${managerFirstname} ${managerSurname}`,
       eyebrowcode: randChoice(random_values.eyebrowcodes), 
       facialhairtypecode: randChoice(random_values.facialhairtypecodes), 
       hairtypecode: randChoice(random_values.hairtypecodes), 
@@ -285,6 +436,21 @@ export function processData(teams, players, isNationalTeam = false) {
       sRow = sRow.replace('{hash}', calcLocalHash(sid)).replace('{stringid}', sid).replace('{stringvalue}', sval);
       results.language_strings.push(sRow.split(','));
     });
+
+    // 9. TeamNationsLink
+    let teamNationId = 146; // fallback Uganda
+    if (teamnationality && teamnationality.trim() !== '') {
+      const matched = nationNameToId.get(teamnationality.toLowerCase());
+      if (matched) teamNationId = matched;
+    }
+    results.team_nations_link.push([leagueId, teamNationId, teamId]);
+
+    // 10. LeagueTeamLinks
+    results.league_team_links.push([
+      0,2,0,4,0,0,0,0,0,0,0,0,
+      leagueId, leagueId, 0, 0, 0, 0, artificialId, 0, teamId,
+      0,0,0,0,0,0,0,0,0,0,0,0,0
+    ]);
   });
 
   return results;

@@ -21,6 +21,10 @@ export default function TeamMaker() {
   const [deepFetch, setDeepFetch] = useState(false);
   const [startTeamId, setStartTeamId] = useState("1001");
   const [startPlayerId, setStartPlayerId] = useState("200000");
+  const [startManagerId, setStartManagerId] = useState("50000");
+  const [startTeamKitId, setStartTeamKitId] = useState("17031");
+  const [leagueId, setLeagueId] = useState(0);
+  const [artificialId, setArtificialId] = useState(0);
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeProgress, setScrapeProgress] = useState(0);
   const [scrapeLogs, setScrapeLogs] = useState(["• Scraper module initialized. Awaiting URL."]);
@@ -133,7 +137,13 @@ export default function TeamMaker() {
         logProcess(`Parsed ${teams.length} teams and ${players.length} players. Aligning templates...`);
         
         setTimeout(() => {
-          const processedTables = processData(teams, players, mode === 'worldcup');
+          const processedTables = processData(
+            teams, players, mode === 'worldcup',
+            parseInt(startManagerId, 10) || null,
+            parseInt(startTeamKitId, 10) || null,
+            leagueId,
+            artificialId
+          );
           setFinalDbData(processedTables);
           logProcess("✅ DB architecture compiled successfully. Ready for export.");
           setIsProcessing(false);
@@ -249,9 +259,7 @@ export default function TeamMaker() {
             {/* Starting IDs */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>
-                  START TEAM ID
-                </label>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>START TEAM ID</label>
                 <input 
                   type="number" value={startTeamId} onChange={e => setStartTeamId(e.target.value)} disabled={isScraping}
                   placeholder="1001"
@@ -259,12 +267,48 @@ export default function TeamMaker() {
                 />
               </div>
               <div>
-                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>
-                  START PLAYER ID
-                </label>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>START PLAYER ID</label>
                 <input 
                   type="number" value={startPlayerId} onChange={e => setStartPlayerId(e.target.value)} disabled={isScraping}
                   placeholder="200000"
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>START MANAGER ID</label>
+                <input 
+                  type="number" value={startManagerId} onChange={e => setStartManagerId(e.target.value)} disabled={isScraping}
+                  placeholder="50000"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>START KIT ID</label>
+                <input 
+                  type="number" value={startTeamKitId} onChange={e => setStartTeamKitId(e.target.value)} disabled={isScraping}
+                  placeholder="17031"
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            {/* NEW: League ID & Artificial ID */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>LEAGUE ID</label>
+                <input 
+                  type="number" value={leagueId} onChange={e => setLeagueId(parseInt(e.target.value) || 0)} disabled={isScraping}
+                  placeholder="0"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>ARTIFICIAL ID</label>
+                <input 
+                  type="number" value={artificialId} onChange={e => setArtificialId(parseInt(e.target.value) || 0)} disabled={isScraping}
+                  placeholder="0"
                   style={inputStyle}
                 />
               </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Database, FileCode2, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, Database, FileCode2, Settings, Shirt } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Sidebar() {
@@ -8,7 +8,8 @@ export default function Sidebar() {
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} /> },
     { name: 'Roster Maker 26', path: '/roster-maker', icon: <Users size={20} /> },
     { name: 'Team Maker', path: '/team-maker', icon: <Database size={20} /> },
-    { name: 'Log Viewer', path: '/logs', icon: <FileCode2 size={20} /> },
+    { name: 'Badge Creator', path: '/badge-creator', icon: <FileCode2 size={20} /> },
+    { name: 'Minikit Creator', path: '/minikit-creator', icon: <Shirt size={20} /> },
   ];
 
   return (

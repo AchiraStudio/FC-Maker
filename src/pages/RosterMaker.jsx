@@ -16,6 +16,12 @@ export default function RosterMaker() {
     boostAmount: 3
   });
   
+  // Multi-sheet XLSX state
+  const [pendingWorkbook, setPendingWorkbook] = useState(null);
+  const [sheetNames, setSheetNames] = useState([]);
+  const [selectedSheet, setSelectedSheet] = useState('');
+  const [pendingFileName, setPendingFileName] = useState('');
+  
   const [isEngineReady, setIsEngineReady] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const fileInputRef = useRef(null);
@@ -38,22 +44,71 @@ export default function RosterMaker() {
     if (!file) return;
 
     logUpdate(`Ingesting template: ${file.name}`);
+    const ext = file.name.split('.').pop().toLowerCase();
     const reader = new FileReader();
 
-    reader.onload = (evt) => {
-      try {
-        const workbook = XLSX.read(evt.target.result, { type: 'binary' });
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rawData = XLSX.utils.sheet_to_json(worksheet);
-        const cleanData = rawData.filter(item => item.nat || item.NAT || item.Nat);
-        
-        setTemplateData(cleanData);
-        logUpdate(`Template parsed successfully. ${cleanData.length} records locked.`);
-      } catch (error) {
-        logUpdate(`Parse error: ${error.message}`);
-      }
-    };
-    reader.readAsBinaryString(file);
+    if (ext === 'xlsx' || ext === 'xls') {
+      reader.onload = (evt) => {
+        try {
+          const workbook = XLSX.read(evt.target.result, { type: 'binary' });
+          const sheets = workbook.SheetNames;
+          setPendingWorkbook(workbook);
+          setPendingFileName(file.name);
+          setSheetNames(sheets);
+          setSelectedSheet(sheets[0]);
+          logUpdate(`Spreadsheet loaded. ${sheets.length} sheet(s) found: ${sheets.join(', ')}. Select a sheet below.`);
+        } catch (err) {
+          logUpdate(`Parse error: ${err.message}`);
+        }
+      };
+      reader.readAsBinaryString(file);
+    } else {
+      // TXT / CSV parse fix
+      reader.onload = (evt) => {
+        try {
+          const raw = evt.target.result;
+          const lines = raw.split(/\r?\n/).filter(l => l.trim());
+          if (lines.length < 2) {
+            logUpdate('Parse error: File has fewer than 2 lines (no data rows).');
+            return;
+          }
+          // Auto-detect delimiter: tab preferred, then comma
+          const firstLine = lines[0];
+          const delimiter = firstLine.includes('\t') ? '\t' : ',';
+          const headers = firstLine.split(delimiter).map(h => h.trim());
+          const rawData = lines.slice(1).map(line => {
+            const values = line.split(delimiter);
+            const obj = {};
+            headers.forEach((h, i) => { obj[h] = (values[i] ?? '').trim(); });
+            return obj;
+          });
+          // Filter rows that have at least one nationality-like key
+          const cleanData = rawData.filter(item => item.nat || item.NAT || item.Nat || item.Nationality);
+          setTemplateData(cleanData);
+          setPendingWorkbook(null);
+          setSheetNames([]);
+          logUpdate(`Template parsed successfully. ${cleanData.length} records locked.`);
+        } catch (err) {
+          logUpdate(`Parse error: ${err.message}`);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const handleSheetConfirm = () => {
+    if (!pendingWorkbook || !selectedSheet) return;
+    try {
+      const worksheet = pendingWorkbook.Sheets[selectedSheet];
+      const rawData = XLSX.utils.sheet_to_json(worksheet);
+      const cleanData = rawData.filter(item => item.nat || item.NAT || item.Nat || item.Nationality);
+      setTemplateData(cleanData);
+      setPendingWorkbook(null);
+      setSheetNames([]);
+      logUpdate(`Sheet "${selectedSheet}" parsed successfully. ${cleanData.length} records locked.`);
+    } catch (err) {
+      logUpdate(`Parse error: ${err.message}`);
+    }
   };
 
   const handleGenerate = async () => {
@@ -183,16 +238,58 @@ export default function RosterMaker() {
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Drop your .xlsx, .csv, or .txt template here</p>
         </motion.div>
 
+        {/* Sheet Selector — appears when a multi-sheet XLSX is pending */}
+        <AnimatePresence>
+          {sheetNames.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              style={{ overflow: 'hidden', marginBottom: '1rem' }}
+            >
+              <div style={{
+                background: 'rgba(0,255,204,0.05)', border: '1px solid var(--accent-color)',
+                borderRadius: '12px', padding: '1.25rem 1.5rem',
+                display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap'
+              }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                  SELECT SHEET
+                </span>
+                <select
+                  value={selectedSheet}
+                  onChange={e => setSelectedSheet(e.target.value)}
+                  style={{
+                    flex: 1, minWidth: '160px',
+                    background: 'rgba(0,0,0,0.4)', border: '1px solid var(--glass-border)',
+                    borderRadius: '8px', color: '#fff', padding: '0.5rem 0.75rem',
+                    fontFamily: "'Poppins', sans-serif", fontSize: '0.9rem', outline: 'none'
+                  }}
+                >
+                  {sheetNames.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <motion.button
+                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  onClick={handleSheetConfirm}
+                  className="btn-primary"
+                  style={{ whiteSpace: 'nowrap', padding: '0.5rem 1.25rem' }}
+                >
+                  Confirm Sheet
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <motion.button 
           whileHover={templateData.length > 0 && !isGenerating ? { scale: 1.01 } : {}}
           whileTap={templateData.length > 0 && !isGenerating ? { scale: 0.98 } : {}}
           className="btn-primary" 
-          disabled={templateData.length === 0 || !isEngineReady || isGenerating} 
+          disabled={templateData.length === 0 || !isEngineReady || isGenerating || sheetNames.length > 0} 
           onClick={handleGenerate} 
           style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px' }}
         >
           {isGenerating ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
-          {templateData.length === 0 ? 'Awaiting Data Source' : isGenerating ? 'Compiling Roster...' : 'Commence Generation'}
+          {sheetNames.length > 0 ? 'Confirm a Sheet First' : templateData.length === 0 ? 'Awaiting Data Source' : isGenerating ? 'Compiling Roster...' : 'Commence Generation'}
         </motion.button>
       </div>
 

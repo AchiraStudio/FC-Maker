@@ -73,28 +73,29 @@ export const templates = {
       "goalnetstanchioncolor1r", "teamcolor2g", "goalnetstanchioncolor1g",
       "teamname", "teamcolor3b", "presassetone", "powid", "hassubstitutionboard",
       "rightfreekicktakerid", "flamethrowercannon", "domesticprestige",
-      "genericint2", "defensivedepth", "hasvikingclap", "jerseytype",
-      "pitchcolor", "pitchwear", "popularity", "hastifo", "presassettwo",
-      "teamstadiumcapacity", "stadiumgoalnetstyle", "iscompetitionscarfenabled",
-      "cityid", "rivalteam", "playsurfacetype", "isbannerenabled",
-      "midfieldrating", "stadiummowpattern_code", "matchdayoverallrating",
-      "matchdaymidfieldrating", "attackrating", "longitude", "buildupplay",
-      "matchdaydefenserating", "hasstandingcrowd", "favoriteteamsheetid",
-      "defenserating", "iscompetitionpoleflagenabled", "skinnyflags",
-      "uefa_consecutive_wins", "longkicktakerid", "trait1vweak",
-      "iscompetitioncrowdcardsenabled", "rightcornerkicktakerid", "gender",
-      "cksupport1", "uefa_cl_wins", "hassuncanthem", "domesticcups",
+      "genericint2", "cksupport7", "defensivedepth", "hasvikingclap",
+      "jerseytype", "pitchcolor", "cksupport9", "pitchwear", "popularity",
+      "hastifo", "presassettwo", "teamstadiumcapacity", "stadiumgoalnetstyle",
+      "iscompetitionscarfenabled", "cityid", "rivalteam", "playsurfacetype",
+      "isbannerenabled", "midfieldrating", "cksupport8", "stadiummowpattern_code",
+      "cksupport6", "matchdayoverallrating", "matchdaymidfieldrating",
+      "attackrating", "longitude", "buildupplay", "matchdaydefenserating",
+      "hasstandingcrowd", "favoriteteamsheetid", "defenserating",
+      "iscompetitionpoleflagenabled", "skinnyflags", "uefa_consecutive_wins",
+      "longkicktakerid", "trait1vweak", "iscompetitioncrowdcardsenabled",
+      "rightcornerkicktakerid", "throwerleft", "gender", "cksupport1",
+      "cornerflagpolecolor", "uefa_cl_wins", "hassuncanthem", "domesticcups",
       "ethnicity", "leftcornerkicktakerid", "youthdevelopment", "teamid",
       "uefa_el_wins", "trait1vequal", "numtransfersin", "stanchionflamethrower",
-      "stadiumgoalnetpattern", "captainid", "personalityid", "prev_el_champ",
-      "leftfreekicktakerid", "cksupport2", "leaguetitles", "genericbanner",
-      "crowdregion", "uefa_uecl_wins", "overallrating", "ballid", "profitability",
-      "utcoffset", "penaltytakerid", "pitchlinecolor", "freekicktakerid",
-      "crowdskintonecode", "internationalprestige", "cksupport3", "haslargeflag",
-      "trainingstadium", "form", "genericint1", "trait1vstrong",
-      "matchdayattackrating"
+      "stadiumgoalnetpattern", "throwerright", "captainid", "personalityid",
+      "prev_el_champ", "leftfreekicktakerid", "cksupport2", "leaguetitles",
+      "genericbanner", "crowdregion", "uefa_uecl_wins", "overallrating",
+      "ballid", "profitability", "utcoffset", "penaltytakerid", "pitchlinecolor",
+      "cksupport5", "freekicktakerid", "crowdskintonecode", "internationalprestige",
+      "cksupport3", "haslargeflag", "trainingstadium", "form", "genericint1",
+      "cksupport4", "trait1vstrong", "matchdayattackrating"
     ],
-    template: "{team_id},18,32,8500,6,255,255,1935,255,255,255,130,1,-25,255,1,255,255,217,255,{team_name},255,0,-1,0,{rightfreekicktakerid},0,1,-1,30,0,2,4,0,2,0,0,3000,0,1,771,101108,0,1,63,3,63,63,61,-57,3,63,0,-1,63,1,1,0,{longkicktakerid},4202496,0,{rightcornerkicktakerid},0,0,0,0,0,5,{leftcornerkicktakerid},4,{team_id},0,528384,0,0,0,{captainid},0,0,{leftfreekicktakerid},0,0,0,1,0,63,74,1,-3,{penaltytakerid},0,{freekicktakerid},7,1,0,1,316,0,-1,526336,61"
+    template: "{teamid},26,218,2500000,255,1,255,1886,1,228,1,53,3,51,206,3,1,1,255,1,{team_name},60,0,-1,0,{rightfreekicktakerid},0,10,-1,0,65,0,2,3,0,0,9,0,0,60704,0,0,285,18,0,1,85,0,1,0,84,85,84,0,1,85,0,-1,85,0,0,0,{longkicktakerid},131586,2,{rightcornerkicktakerid},0,0,0,0,0,0,14,4,{leftcornerkicktakerid},7,{teamid},0,131586,0,0,0,0,{captainid},1,0,{leftfreekicktakerid},0,13,0,3,0,85,151,9,0,{penaltytakerid},0,0,{freekicktakerid},2,9,0,0,366,0,-1,0,263170,84"
   },
   teamkits: {
     columns: [
@@ -284,24 +285,30 @@ export const templates = {
   },
   managers: {
     columns: [
-      "firstname", "commonname", "surname", "eyebrowcode", "skintypecode",
-      "haircolorcode", "facialhairtypecode", "managerid", "accessorycode4",
-      "hairtypecode", "lipcolor", "skinsurfacepack", "accessorycode3",
-      "accessorycolourcode1", "headtypecode", "height", "seasonaloutfitid",
-      "birthdate", "skinmakeup", "weight", "hashighqualityhead", "eyedetail",
-      "gender", "headassetid", "ethnicity", "faceposerpreset", "teamid",
-      "eyecolorcode", "personalityid", "accessorycolourcode3", "accessorycode1",
-      "headclasscode", "nationality", "sideburnscode", "accessorycolourcode4",
-      "headvariation", "skintonecode", "outfitid", "skincomplexion",
-      "accessorycode2", "hairstylecode", "bodytypecode", "managerjointeamdate",
-      "accessorycolourcode2", "facialhaircolorcode"
+      "starrating", "firstname", "commonname", "surname", "eyebrowcode", "skintypecode", "haircolorcode", "facialhairtypecode", "managerid", "accessorycode4", "hairtypecode", "facepsdlayer0", "lipcolor", "skinsurfacepack", "accessorycode3", "accessorycolourcode1", "headtypecode", "height", "seasonaloutfitid", "birthdate", "isrewardable", "skinmakeup", "trait1vweak", "weight", "hashighqualityhead", "eyedetail", "gender", "headassetid", "ethnicity", "faceposerpreset", "islicensed", "teamid", "trait1vequal", "eyecolorcode", "personalityid", "accessorycolourcode3", "accessorycode1", "headclasscode", "nationality", "sideburnscode", "accessorycolourcode4", "headvariation", "skintonecode", "outfitid", "facepsdlayer1", "skincomplexion", "accessorycode2", "hairstylecode", "bodytypecode", "managerjointeamdate", "trait1vstrong", "accessorycolourcode2", "facialhaircolorcode"
     ],
-    template: "{firstname},,{lastname},{eyebrowcode},0,0,{facialhairtypecode},{managerid},0,{hairtypecode},0,{skinsurfacepack},0,0,{headtypecode},{height},{seasonaloutfitid},145895,0,{weight},0,2,0,45119,{ethnicity},3,{teamid},5,{personalityid},0,0,0,{nationality},0,0,0,{skintonecode},{outfitid},4,0,0,{bodytypecode},159680,0,{facialhaircolorcode}"
+    template: "{starrating},{firstname},{commonname},{surname},{eyebrowcode},0,22,{facialhairtypecode},{managerid},0,{hairtypecode},3,0,{skinsurfacepack},0,0,{headtypecode},{height},{seasonaloutfitid},142099,0,0,132224,{weight},1,2,0,{managerid},{ethnicity},0,1,{teamid},263296,4,{personalityid},0,0,0,{nationality},0,0,0,{skintonecode},{outfitid},0,3,0,0,{bodytypecode},160725,4202624,0,22"
   },
   language_strings: {
     columns: [
       "langid", "stringid", "stringvalue", "hash"
     ],
     template: "0,{stringid},{stringvalue},{hash}"
+  },
+  team_nations_link: {
+    columns: ["leagueid", "nationid", "teamid"],
+    template: "{leagueid},{teamid},{nationid}"
+  },
+  league_team_links: {
+    columns: [
+      "homega", "previousyeartableposition", "homegf", "currenttableposition", "awaygf",
+      "awayga", "teamshortform", "hasachievedobjective", "yettowin", "unbeatenallcomps",
+      "unbeatenleague", "champion", "leagueid", "prevleagueid", "highestpossible",
+      "teamform", "highestprobable", "homewins", "artificialkey", "nummatchesplayed",
+      "teamid", "grouping", "awaywins", "objective", "points", "actualvsexpectations",
+      "homelosses", "unbeatenhome", "lastgameresult", "unbeatenaway", "awaylosses",
+      "awaydraws", "homedraws", "teamlongform"
+    ],
+    template: "0,2,0,4,0,0,0,0,0,0,0,0,{leagueid},{leagueid},0,0,0,0,{artificialid},0,{teamid},0,0,0,0,0,0,0,0,0,0,0,0,0"
   }
 };

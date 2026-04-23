@@ -5,31 +5,71 @@ import { nations } from './resources.js';
 
 export let burnedplayerids = [];
 
+// ── Case-insensitive field getter ───────────────────────────────────────
+function getFieldCI(obj, name) {
+    const key = Object.keys(obj).find(k => k.toLowerCase() === name.toLowerCase());
+    return key ? obj[key] : undefined;
+}
+
+// ── Nationality alias normalisation ─────────────────────────────────
+const NATIONALITY_ALIASES = {
+    'north korea':              'Korea DPR',
+    'south korea':              'Korea Republic',
+    'republic of korea':        'Korea Republic',
+    'dprk':                     'Korea DPR',
+    'ivory coast':              "Côte d'Ivoire",
+    "cote d'ivoire":            "Côte d'Ivoire",
+    'netherlands':              'Holland',
+    'the netherlands':          'Holland',
+    'united states':            'United States',
+    'usa':                      'United States',
+    'republic of ireland':      'Republic of Ireland',
+    'ireland':                  'Republic of Ireland',
+    'czechia':                  'Czech Republic',
+    'chinese taipei':           'Chinese Taipei',
+    'taiwan':                   'Chinese Taipei',
+    'north macedonia':          'North Macedonia',
+    'bosnia':                   'Bosnia and Herzegovina',
+    'trinidad & tobago':        'Trinidad and Tobago',
+    'democratic republic of congo': 'Congo DR',
+    'dr congo':                 'Congo DR',
+};
+
+function normaliseNationality(raw) {
+    if (!raw) return null;
+    const trimmed = String(raw).trim();
+    const lower = trimmed.toLowerCase();
+    return NATIONALITY_ALIASES[lower] || trimmed;
+}
+
 export function makeplayers(templateData, settings) {
     let generatedPlayers = [];
     templateData.forEach(row => {
         let player = parsetemplateplayer({ ...row });
         
+        // player.nat is already normalised by parsetemplateplayer
+        const natName = player.nat || 'Uganda';
+
         let demo = builddemographics(
-            player.height ? String(player.height).replace(/[^0-9.]/g, '') : 180, 
-            player.weight ? String(player.weight).replace(/[^0-9.]/g, '') : 75, 
-            player.birthdate || "01/01/2000", 
-            player.foot || "Right", 
-            player.weakfoot || "Bad", 
+            player.height,
+            player.weight,
+            player.birthdate || '01/01/2000',
+            player.foot,
+            player.weakfoot || 'Bad',
             player.finovr
         );
         let attr = buildplayerattributes(
             player.pos1, player.pos2, player.pos3, player.pos4, player.pos5, player.pos6, player.pos7,
             player.finovr, player.age,
-            player.nat || player.NAT || player.Nat || "Uganda",
+            natName,
             settings
         );
         let gender = settings.makeWomen ? 1 : 0;
-        let appearance = buildplayerappearances(gender, player.nat || player.NAT || player.Nat || "Uganda");
+        let appearance = buildplayerappearances(gender, natName);
         
         let othr = {
             playerid: findplayerid(player.playerid || 0),
-            nationality: (nations().find(nation => nation.nationname === (player.nat || player.NAT || player.Nat)) || {nationid: 146}).nationid,
+            nationality: (nations().find(nation => nation.nation.toLowerCase() === natName.toLowerCase()) || {nationid: 146}).nationid,
             firstname: player.given || "",
             surname: player.sur || "",
             playerjerseyname: player.jersey || "",
@@ -253,7 +293,7 @@ export function buildplayerattributes(pos1, pos2, pos3, pos4, pos5, pos6, pos7, 
 
 export function buildplayerappearances(gender, nationname){
 
-    let nation = nations().find(n=>n.nation==nationname);
+    let nation = nations().find(n=>n.nation.toLowerCase()===nationname.toLowerCase());
     if(!nation){
         nation= nations()[145];
     }
@@ -297,12 +337,19 @@ export function builddemographics(height, weight, birthdate, foot, weakfoot, ovr
 }
 
 export function parsetemplateplayer(player){
-    let cleanOvr = player.ovr ? parseInt(String(player.ovr).replace(/[^0-9.]/g, ''), 10) : null;
-    let cleanTransferValue = player.transfervalue ? parseInt(String(player.transfervalue).replace(/[^0-9.]/g, ''), 10) : null;
-    
-    player.finovr = getovrfromtemplate(cleanOvr, cleanTransferValue) || 60; 
+    // ─ OVR / Transfer Value
+    let cleanOvr = getFieldCI(player, 'ovr');
+    cleanOvr = cleanOvr ? parseInt(String(cleanOvr).replace(/[^0-9.]/g, ''), 10) : null;
+    let cleanTransferValue = getFieldCI(player, 'transfervalue') || getFieldCI(player, 'transfer_value');
+    cleanTransferValue = cleanTransferValue ? String(cleanTransferValue).trim() : null;
+    player.finovr = getovrfromtemplate(cleanOvr, cleanTransferValue) || 60;
 
-    const rawBd = player.birthdate || player.Birthdate || player.birthDate;
+    // ─ Nationality (normalise before anything else)
+    const rawNat = getFieldCI(player, 'nat') || getFieldCI(player, 'nationality');
+    player.nat = normaliseNationality(rawNat) || 'Uganda';
+
+    // ─ Birthdate
+    const rawBd = getFieldCI(player, 'birthdate') || getFieldCI(player, 'birthDate');
     const parsedBd = parseBirthdate(rawBd);
     const cleanBdString = parsedBd
         ? `${parsedBd.year}-${String(parsedBd.month).padStart(2,'0')}-${String(parsedBd.day).padStart(2,'0')}`
@@ -310,13 +357,39 @@ export function parsetemplateplayer(player){
     player.age = calculateage(cleanBdString, '2026-01-01');
     player.birthdate = cleanBdString;
 
-    player.pos1=getpositionid(player.pos1, true);
-    player.pos2=getpositionid(player.pos2, false);
-    player.pos3=getpositionid(player.pos3, false);
-    player.pos4=getpositionid(player.pos4, false);
-    player.pos5=getpositionid(player.pos5, false);
-    player.pos6=getpositionid(player.pos6, false);
-    player.pos7=getpositionid(player.pos7, false);
+    // ─ Height — case-insensitive, strip non-numeric, random 165-185 if missing/empty
+    const rawH = getFieldCI(player, 'height');
+    const cleanH = rawH ? parseInt(String(rawH).replace(/[^0-9.]/g, ''), 10) : NaN;
+    player.height = (!isNaN(cleanH) && cleanH > 0) ? cleanH : randbetween(165, 185);
+
+    // ─ Weight — case-insensitive, random 65-85 if missing/empty
+    const rawW = getFieldCI(player, 'weight');
+    const cleanW = rawW ? parseInt(String(rawW).replace(/[^0-9.]/g, ''), 10) : NaN;
+    player.weight = (!isNaN(cleanW) && cleanW > 0) ? cleanW : randbetween(65, 85);
+
+    // ─ Preferred Foot — case-insensitive, random Left/Right if missing
+    const rawFoot = getFieldCI(player, 'foot') || getFieldCI(player, 'preferredfoot');
+    const cleanFoot = rawFoot ? String(rawFoot).trim() : '';
+    player.foot = cleanFoot.length > 0 ? cleanFoot : (Math.random() < 0.75 ? 'Right' : 'Left');
+
+    // ─ Weak Foot — case-insensitive, fallback 'Bad'
+    const rawWF = getFieldCI(player, 'weakfoot') || getFieldCI(player, 'weak_foot');
+    player.weakfoot = rawWF ? String(rawWF).trim() : 'Bad';
+
+    // ─ Name fields — case-insensitive
+    player.given  = getFieldCI(player, 'given')  || getFieldCI(player, 'firstname')  || '';
+    player.sur    = getFieldCI(player, 'sur')    || getFieldCI(player, 'surname')    || getFieldCI(player, 'lastname') || '';
+    player.jersey = getFieldCI(player, 'jersey') || getFieldCI(player, 'jerseyname') || '';
+    player.nick   = getFieldCI(player, 'nick')   || getFieldCI(player, 'commonname') || '';
+
+    // ─ Positions — case-insensitive
+    player.pos1 = getpositionid(getFieldCI(player, 'pos1') || getFieldCI(player, 'position1') || getFieldCI(player, 'position'), true);
+    player.pos2 = getpositionid(getFieldCI(player, 'pos2') || getFieldCI(player, 'position2'), false);
+    player.pos3 = getpositionid(getFieldCI(player, 'pos3') || getFieldCI(player, 'position3'), false);
+    player.pos4 = getpositionid(getFieldCI(player, 'pos4') || getFieldCI(player, 'position4'), false);
+    player.pos5 = getpositionid(getFieldCI(player, 'pos5') || getFieldCI(player, 'position5'), false);
+    player.pos6 = getpositionid(getFieldCI(player, 'pos6') || getFieldCI(player, 'position6'), false);
+    player.pos7 = getpositionid(getFieldCI(player, 'pos7') || getFieldCI(player, 'position7'), false);
 
     return player;
 }

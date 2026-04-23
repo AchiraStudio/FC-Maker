@@ -517,7 +517,7 @@ export function getpotential(age, ovr, pos1, pos2, pos3, pos4, nationname) {
 
     let nationid = 0;
     if (nationname) {
-        const nationRecord = nations().find(n => n.nation === nationname);
+        const nationRecord = nations().find(n => n.nation.toLowerCase() === nationname.toLowerCase());
         if (nationRecord) nationid = nationRecord.nationid;
     }
 
@@ -547,6 +547,7 @@ export function getpotential(age, ovr, pos1, pos2, pos3, pos4, nationname) {
 export function getovrfromtemplate(ovr, transfervalue) {
     if (ovr) return ovr;
     const record = transfervaluestoovr().find(x => x.transfervalue === transfervalue);
+    if (!record) return randbetween(60, 70); // safe fallback if transfervalue unmatched
     return randbetween(record.lo, record.hi);
 }
 
