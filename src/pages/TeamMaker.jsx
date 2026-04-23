@@ -36,6 +36,11 @@ export default function TeamMaker() {
   const [processLogs, setProcessLogs] = useState(["• Processor module initialized. Awaiting Step 1 data."]);
   const [finalDbData, setFinalDbData] = useState(null);
 
+  // Default data from files
+  const [defaultPlayers, setDefaultPlayers] = useState([]);
+  const [playerNamesMap, setPlayerNamesMap] = useState(new Map());
+  const [defaultDataLoaded, setDefaultDataLoaded] = useState(false);
+
   const fileInputRef = useRef(null);
   const scraperControl = useRef(null);
   const scrapeLogEndRef = useRef(null);
@@ -44,7 +49,6 @@ export default function TeamMaker() {
   const logScrape = (msg) => setScrapeLogs(prev => [...prev, `• ${msg}`]);
   const logProcess = (msg) => setProcessLogs(prev => [...prev, `• ${msg}`]);
 
-  // Auto-scroll logs
   useEffect(() => {
     if (scrapeLogEndRef.current) scrapeLogEndRef.current.scrollIntoView({ behavior: "smooth" });
   }, [scrapeLogs]);
@@ -52,11 +56,90 @@ export default function TeamMaker() {
     if (processLogEndRef.current) processLogEndRef.current.scrollIntoView({ behavior: "smooth" });
   }, [processLogs]);
 
+  // Load default players and names on mount
+  useEffect(() => {
+    const loadDefaultData = async () => {
+      try {
+        // Helper to detect delimiter (tab or comma)
+        const detectDelimiter = (line) => line.includes('\t') ? '\t' : ',';
+
+        // ----- Load players.txt -----
+        const playersRes = await fetch('/defaults/players.txt');
+        if (!playersRes.ok) throw new Error('players.txt not found');
+        
+        // players.txt is encoded in UTF-16 LE, so we must decode it manually
+        // because response.text() defaults to UTF-8 and mangles the characters.
+        const buffer = await playersRes.arrayBuffer();
+        const decoder = new TextDecoder('utf-16le');
+        let playersText = decoder.decode(buffer);
+        
+        // Strip BOM and normalize line endings
+        playersText = playersText.replace(/^\uFEFF/, '').replace(/\r/g, '');
+        const playersLines = playersText.trim().split('\n');
+        const playersDelim = detectDelimiter(playersLines[0]);
+        const playersRows = playersLines.map(line => line.split(playersDelim));
+        const playersHeaders = playersRows[0].map(h => h.trim().toLowerCase());
+        const players = playersRows.slice(1).map(row => {
+          const obj = {};
+          playersHeaders.forEach((h, i) => {
+            let val = row[i]?.trim();
+            // Remove possible surrounding quotes
+            if (val && val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+            obj[h] = val;
+          });
+          return obj;
+        });
+        setDefaultPlayers(players);
+        logScrape(`📥 Loaded ${players.length} default players from players.txt`);
+
+        // Debug: check if sample row (10742,2970) exists
+        const samplePlayer = players.find(p => p.firstnameid === '10742' && p.lastnameid === '2970');
+        if (samplePlayer) {
+          logScrape(`🔍 Sample player found: firstnameid=10742, lastnameid=2970 → playerid=${samplePlayer.playerid}`);
+        } else {
+          logScrape(`⚠️ Sample player (10742,2970) NOT found in players.txt – check delimiter or headers.`);
+        }
+
+        // ----- Load playernames.txt -----
+        const namesRes = await fetch('/defaults/playernames.txt');
+        if (!namesRes.ok) throw new Error('playernames.txt not found');
+        const namesText = await namesRes.text();
+        const namesLines = namesText.trim().split('\n');
+        const namesDelim = detectDelimiter(namesLines[0]);
+        const namesRows = namesLines.map(line => line.split(namesDelim));
+        const nameMap = new Map(); // nameid → name
+        for (let i = 1; i < namesRows.length; i++) {
+          const row = namesRows[i];
+          if (row.length < 3) continue;
+          const nameid = parseInt(row[0], 10);
+          const name = row[2]?.trim();
+          if (!isNaN(nameid) && name && name !== '') {
+            nameMap.set(nameid, name);
+          }
+        }
+        setPlayerNamesMap(nameMap);
+        logScrape(`📥 Loaded ${nameMap.size} name mappings from playernames.txt`);
+
+        // Debug: check if names 10742 and 2970 exist
+        const emilName = nameMap.get(10742);
+        const auderoName = nameMap.get(2970);
+        logScrape(`🔍 Name for 10742: ${emilName || 'NOT FOUND'}, Name for 2970: ${auderoName || 'NOT FOUND'}`);
+
+        setDefaultDataLoaded(true);
+      } catch (err) {
+        logScrape(`⚠️ Could not load default data: ${err.message} – proceeding without duplicate prevention.`);
+        setDefaultDataLoaded(true);
+      }
+    };
+    loadDefaultData();
+  }, []);
+
   // ==========================================
   // STEP 1: EXTRACTION (Scraper)
   // ==========================================
   const handleStartScrape = async () => {
     if (!url.trim()) { logScrape("⚠️ Error: Please enter a Transfermarkt URL."); return; }
+    if (!defaultDataLoaded) { logScrape("⚠️ Waiting for default data to load..."); return; }
     
     const teamId = parseInt(startTeamId, 10) || 1001;
     const playerId = parseInt(startPlayerId, 10) || 200000;
@@ -67,16 +150,18 @@ export default function TeamMaker() {
     logScrape(`🚀 Commencing extraction — Mode: ${mode.toUpperCase()} | Deep Fetch: ${deepFetch ? "ON" : "OFF"} | Team ID: ${teamId} | Player ID: ${playerId}`);
 
     try {
-      const scraper = await runScraper(url.trim(), mode, deepFetch, logScrape, setScrapeProgress, teamId, playerId);
+      const scraper = await runScraper(
+        url.trim(), mode, deepFetch, logScrape, setScrapeProgress,
+        teamId, playerId, defaultPlayers, playerNamesMap
+      );
       scraperControl.current = scraper.stop;
       
-      const { teams, players } = scraper.result;
-      if (!teams.length || !players.length) throw new Error("Failed to extract sufficient team or player data.");
-
-      setRawScrapeData({ teams, players });
+      const { teams, players, scrapedPlayers } = scraper.result;
+      if (!teams.length) throw new Error("No teams extracted.");
+      
+      setRawScrapeData({ teams, players, scrapedPlayers });
       setScrapeProgress(100);
-      logScrape(`✅ Extraction Complete! ${players.length} players across ${teams.length} teams locked.`);
-
+      logScrape(`✅ Extraction Complete! ${players.length} total players (${scrapedPlayers.length} newly scraped) across ${teams.length} teams.`);
     } catch (e) {
       logScrape(`❌ Fatal Error: ${e.message}`);
     } finally {
@@ -98,8 +183,10 @@ export default function TeamMaker() {
     const wb = XLSX.utils.book_new();
     const wsTeams = XLSX.utils.json_to_sheet(rawScrapeData.teams);
     const wsPlayers = XLSX.utils.json_to_sheet(rawScrapeData.players);
+    const wsScraped = XLSX.utils.json_to_sheet(rawScrapeData.scrapedPlayers);
     XLSX.utils.book_append_sheet(wb, wsTeams, "Teams");
     XLSX.utils.book_append_sheet(wb, wsPlayers, "Players");
+    XLSX.utils.book_append_sheet(wb, wsScraped, "Scraped-Players");
     XLSX.writeFile(wb, `TM_Raw_Data_${Date.now()}.xlsx`);
     logScrape("✅ Spreadsheet downloaded successfully!");
   };
@@ -173,7 +260,6 @@ export default function TeamMaker() {
     logProcess("✅ Master Database downloaded successfully!");
   };
 
-  // Shared input style
   const inputStyle = {
     width: "100%",
     padding: "0.75rem 1rem",
@@ -200,7 +286,7 @@ export default function TeamMaker() {
           style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(0,0,0,0.4)', padding: '0.6rem 1.2rem', borderRadius: '30px', border: '1px solid var(--glass-border)' }}
         >
           <Database size={16} color="var(--accent-color)" />
-          <span style={{ fontSize: '0.85rem', color: 'var(--accent-color)' }}>Pipeline Offline v3.0</span>
+          <span style={{ fontSize: '0.85rem', color: 'var(--accent-color)' }}>Pipeline v4.0</span>
         </motion.div>
       </div>
 
@@ -211,7 +297,7 @@ export default function TeamMaker() {
           <div style={{ background: 'rgba(0,0,0,0.4)', padding: '1.5rem', borderBottom: '1px solid var(--glass-border)' }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: '500', color: '#fff', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ background: 'var(--accent-color)', color: '#000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>STEP 1</span>
-              Web Extraction
+              Web Extraction + Default Player Merging
             </h3>
           </div>
           
@@ -294,7 +380,6 @@ export default function TeamMaker() {
               </div>
             </div>
 
-            {/* NEW: League ID & Artificial ID */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div>
                 <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>LEAGUE ID</label>
@@ -317,7 +402,7 @@ export default function TeamMaker() {
             {/* Action Buttons */}
             <div style={{ display: "flex", gap: "0.5rem", marginTop: 'auto' }}>
               <button 
-                onClick={handleStartScrape} disabled={isScraping} className="btn-primary"
+                onClick={handleStartScrape} disabled={isScraping || !defaultDataLoaded} className="btn-primary"
                 style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                 {isScraping ? <Loader2 size={18} className="animate-spin" /> : <Play size={18} />}
                 {isScraping ? "EXTRACTING..." : "COMMENCE EXTRACTION"}
@@ -345,7 +430,7 @@ export default function TeamMaker() {
                   initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
                   onClick={handleDownloadRaw} className="btn-primary"
                   style={{ width: "100%", background: 'var(--accent-color)', color: '#000', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <Download size={18} /> DOWNLOAD SPREADSHEET
+                  <Download size={18} /> DOWNLOAD SPREADSHEET (3 sheets)
                 </motion.button>
               )}
             </AnimatePresence>
@@ -367,7 +452,7 @@ export default function TeamMaker() {
           <div style={{ background: 'rgba(0,0,0,0.4)', padding: '1.5rem', borderBottom: '1px solid var(--glass-border)' }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: '500', color: '#fff', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ background: 'var(--accent-color)', color: '#000', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>STEP 2</span>
-              Database Compiler
+              Database Compiler (uses Teams + Players sheets only)
             </h3>
           </div>
 
@@ -388,7 +473,7 @@ export default function TeamMaker() {
               <h4 style={{ fontWeight: '500', marginBottom: '0.25rem', fontSize: '1rem', color: uploadedFile ? '#fff' : 'inherit' }}>
                 {uploadedFile ? uploadedFile.name : "Import Spreadsheet"}
               </h4>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Drop your exported .xlsx from Step 1 here</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Drop your exported .xlsx from Step 1 here (the "Scraped-Players" sheet will be ignored)</p>
             </motion.div>
 
             {/* Process Button */}
