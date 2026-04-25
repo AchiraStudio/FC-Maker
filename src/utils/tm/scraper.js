@@ -129,14 +129,29 @@ export async function runScraper(
     try {
       await new Promise(r => setTimeout(r, 1500 + Math.random() * 1500));
       let proxyUrl = targetUrl.replace("https://www.transfermarkt.com", "/tm");
-      const res = await fetch(proxyUrl);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await fetch(proxyUrl, { method: 'GET', redirect: 'follow' });
+
+      if (!res.ok) {
+        // 405 = Method Not Allowed — the proxy/WAF rejects the verb; no point retrying
+        if (res.status === 405) {
+          log(`  ❌ HTTP 405 (Method Not Allowed) from server — check proxy config. Not retrying.`);
+          return null;
+        }
+        // 403 / 429 / 503 are also usually un-retryable in quick succession
+        if ([403, 429, 503].includes(res.status)) {
+          log(`  ⚠️ HTTP ${res.status} — rate-limited or blocked. Retry ${retryCount + 1}/3...`);
+          await new Promise(r => setTimeout(r, 6000 + retryCount * 3000));
+          return safeRequest(targetUrl, retryCount + 1);
+        }
+        throw new Error(`HTTP ${res.status}`);
+      }
+
       const text = await res.text();
       if (text.includes("Checking your browser") || text.includes("cf-browser-verification") ||
           text.includes("Just a moment") || text.includes("challenge-platform") ||
           text.includes("cf-challenge") || text.length < 500) {
-        log(`  ⚠️ Anti-bot challenge. Retry ${retryCount + 1}/3...`);
-        await new Promise(r => setTimeout(r, 5000));
+        log(`  ⚠️ Anti-bot / Cloudflare challenge detected. Retry ${retryCount + 1}/3...`);
+        await new Promise(r => setTimeout(r, 5000 + retryCount * 2000));
         return safeRequest(targetUrl, retryCount + 1);
       }
       return text;
