@@ -272,15 +272,24 @@ export function processData(teams, players, isNationalTeam = false, startManager
     // 4. Determine Starting Players
     const starting_order = [0, 3, 4, 6, 7, 10, 13, 15, 23, 25, 27];
     let startingPlayers = [];
+    const usedStartingIds = new Set();
     
     for (const pos of starting_order) {
-      let candidates = teamPlayers.filter(p => p.NumericPosition === pos);
+      let candidates = teamPlayers.filter(p => p.NumericPosition === pos && !usedStartingIds.has(p.playerid));
       if (candidates.length === 0) {
         const compats = getCompatiblePositions(pos);
-        candidates = teamPlayers.filter(p => compats.includes(p.NumericPosition));
+        candidates = teamPlayers.filter(p => compats.includes(p.NumericPosition) && !usedStartingIds.has(p.playerid));
       }
+      
+      // Fallback: if still no candidates, just pick any unused player
+      if (candidates.length === 0) {
+        candidates = teamPlayers.filter(p => !usedStartingIds.has(p.playerid));
+      }
+
       if (candidates.length > 0) {
-        startingPlayers.push(candidates[0].playerid);
+        const selectedId = candidates[0].playerid;
+        startingPlayers.push(selectedId);
+        usedStartingIds.add(selectedId);
       } else {
         startingPlayers.push(-1);
       }
@@ -336,29 +345,25 @@ export function processData(teams, players, isNationalTeam = false, startManager
     results.teamsheet.push(tsRow.split(','));
 
     // 6. TeamPlayerLink — position-aware jersey numbers, unique per team
-    const posOrder = [[0, 0], [3, 1], [4, 2], [6, 3], [7, 4], [10, 5], [13, 6], [15, 7], [23, 8], [25, 9], [27, 10]];
-    const maxMain = isNationalTeam ? 26 : posOrder.length;
     const assignedIdsLink = new Set();
     const teamUsedNumbers = new Set(); // per-team jersey uniqueness
 
-    posOrder.slice(0, maxMain).forEach(([pos, key]) => {
-      const pid = assignments[`${pos}_${key}`];
-      if (pid) {
+    startingPlayers.forEach((pid, i) => {
+      if (pid !== -1) {
+        const pos = starting_order[i];
         const group = posToJerseyGroup(pos);
         const jerseyNum = pickJerseyNumber(group, teamUsedNumbers);
-        results.teamplayerlink.push([0,0,0,0,jerseyNum,pos,key,teamId,0,0,0,0,0,pid,3,0]);
+        results.teamplayerlink.push([0,0,0,0,jerseyNum,pos,i,teamId,0,0,0,0,0,pid,3,0]);
         assignedIdsLink.add(pid);
       }
     });
 
-    if (!isNationalTeam) {
-      const subsLink = teamPlayers.filter(p => !assignedIdsLink.has(p.playerid)).slice(0, 10);
-      subsLink.forEach((sub, i) => {
-        const group = posToJerseyGroup(sub.NumericPosition ?? 14);
-        const jerseyNum = pickJerseyNumber(group, teamUsedNumbers);
-        results.teamplayerlink.push([0,0,0,0,jerseyNum,28,posOrder.length+i,teamId,0,0,0,0,0,sub.playerid,3,0]);
-      });
-    }
+    const subsLink = teamPlayers.filter(p => !assignedIdsLink.has(p.playerid));
+    subsLink.forEach((sub, i) => {
+      const group = posToJerseyGroup(sub.NumericPosition ?? 14);
+      const jerseyNum = pickJerseyNumber(group, teamUsedNumbers);
+      results.teamplayerlink.push([0,0,0,0,jerseyNum,28,startingPlayers.length+i,teamId,0,0,0,0,0,sub.playerid,3,0]);
+    });
 
     // Default team (111592) for ALL players — jersey numbers unique across default-team pool too
     const defaultTeamUsedNumbers = new Set();
