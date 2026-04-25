@@ -342,25 +342,32 @@ export function parsetemplateplayer(player){
     cleanOvr = cleanOvr ? parseInt(String(cleanOvr).replace(/[^0-9.]/g, ''), 10) : null;
     let cleanTransferValue = getFieldCI(player, 'transfervalue') || getFieldCI(player, 'transfer_value');
     cleanTransferValue = cleanTransferValue ? String(cleanTransferValue).trim() : null;
-    player.finovr = getovrfromtemplate(cleanOvr, cleanTransferValue) || 60;
+    let templateOvr = getovrfromtemplate(cleanOvr, cleanTransferValue);
+    player.finovr = templateOvr ? templateOvr : randbetween(55, 75);
 
     // ─ Nationality (normalise before anything else)
     const rawNat = getFieldCI(player, 'nat') || getFieldCI(player, 'nationality');
     player.nat = normaliseNationality(rawNat) || 'Uganda';
 
-    // ─ Birthdate
+    // ─ Birthdate (Randomize 18-35 years old if missing)
     const rawBd = getFieldCI(player, 'birthdate') || getFieldCI(player, 'birthDate');
     const parsedBd = parseBirthdate(rawBd);
-    const cleanBdString = parsedBd
-        ? `${parsedBd.year}-${String(parsedBd.month).padStart(2,'0')}-${String(parsedBd.day).padStart(2,'0')}`
-        : '2000-01-01';
+    let cleanBdString;
+    if (parsedBd) {
+        cleanBdString = `${parsedBd.year}-${String(parsedBd.month).padStart(2,'0')}-${String(parsedBd.day).padStart(2,'0')}`;
+    } else {
+        const randomYear = randbetween(1991, 2008); // 18-35 years old in 2026
+        const randomMonth = randbetween(1, 12);
+        const randomDay = randbetween(1, 28);
+        cleanBdString = `${randomYear}-${String(randomMonth).padStart(2,'0')}-${String(randomDay).padStart(2,'0')}`;
+    }
     player.age = calculateage(cleanBdString, '2026-01-01');
     player.birthdate = cleanBdString;
 
-    // ─ Height — case-insensitive, strip non-numeric, random 165-185 if missing/empty
+    // ─ Height — case-insensitive, strip non-numeric, random 165-180 if missing/empty
     const rawH = getFieldCI(player, 'height');
     const cleanH = rawH ? parseInt(String(rawH).replace(/[^0-9.]/g, ''), 10) : NaN;
-    player.height = (!isNaN(cleanH) && cleanH > 0) ? cleanH : randbetween(165, 185);
+    player.height = (!isNaN(cleanH) && cleanH > 0) ? cleanH : randbetween(165, 180);
 
     // ─ Weight — case-insensitive, random 65-85 if missing/empty
     const rawW = getFieldCI(player, 'weight');
@@ -383,13 +390,21 @@ export function parsetemplateplayer(player){
     player.nick   = getFieldCI(player, 'nick')   || getFieldCI(player, 'commonname') || '';
 
     // ─ Positions — case-insensitive
-    player.pos1 = getpositionid(getFieldCI(player, 'pos1') || getFieldCI(player, 'position1') || getFieldCI(player, 'position'), true);
-    player.pos2 = getpositionid(getFieldCI(player, 'pos2') || getFieldCI(player, 'position2'), false);
-    player.pos3 = getpositionid(getFieldCI(player, 'pos3') || getFieldCI(player, 'position3'), false);
-    player.pos4 = getpositionid(getFieldCI(player, 'pos4') || getFieldCI(player, 'position4'), false);
-    player.pos5 = getpositionid(getFieldCI(player, 'pos5') || getFieldCI(player, 'position5'), false);
-    player.pos6 = getpositionid(getFieldCI(player, 'pos6') || getFieldCI(player, 'position6'), false);
-    player.pos7 = getpositionid(getFieldCI(player, 'pos7') || getFieldCI(player, 'position7'), false);
+    const normalizePos = (p) => {
+        if (!p) return p;
+        let str = String(p).trim().toLowerCase();
+        if (str === 'left midfield') return 'LM';
+        if (str === 'right midfield') return 'RM';
+        return p;
+    };
+    
+    player.pos1 = getpositionid(normalizePos(getFieldCI(player, 'pos1') || getFieldCI(player, 'position1') || getFieldCI(player, 'position')), true);
+    player.pos2 = getpositionid(normalizePos(getFieldCI(player, 'pos2') || getFieldCI(player, 'position2')), false);
+    player.pos3 = getpositionid(normalizePos(getFieldCI(player, 'pos3') || getFieldCI(player, 'position3')), false);
+    player.pos4 = getpositionid(normalizePos(getFieldCI(player, 'pos4') || getFieldCI(player, 'position4')), false);
+    player.pos5 = getpositionid(normalizePos(getFieldCI(player, 'pos5') || getFieldCI(player, 'position5')), false);
+    player.pos6 = getpositionid(normalizePos(getFieldCI(player, 'pos6') || getFieldCI(player, 'position6')), false);
+    player.pos7 = getpositionid(normalizePos(getFieldCI(player, 'pos7') || getFieldCI(player, 'position7')), false);
 
     return player;
 }

@@ -269,28 +269,7 @@ export function processData(teams, players, isNationalTeam = false, startManager
     fRow = fRow.replace(/{teamid}/g, teamId).replace(/{formationid}/g, templateNum);
     results.formations.push(fRow.split(','));
 
-    // 4. TeamMentality
-    let mentTemplateKey = `template${templateNum}`;
-    if (!templates.teammentality.templates[mentTemplateKey]) mentTemplateKey = 'template1';
-    
-    templates.teammentality.templates[mentTemplateKey].forEach(mTemplate => {
-      let mRow = mTemplate.replace(/{teamid}/g, teamId).replace(/{team_id}/g, teamId);
-      
-      const roleReplacements = {
-        rightfreekicktakerid: specialRoles[0], longkicktakerid: specialRoles[1],
-        rightcornerkicktakerid: specialRoles[2], leftcornerkicktakerid: specialRoles[3],
-        captainid: specialRoles[4], leftfreekicktakerid: specialRoles[5], penaltytakerid: specialRoles[6],
-        playeridrelatedtoteam: specialRoles[0],
-        playerid0: specialRoles[0], playerid1: specialRoles[1], playerid2: specialRoles[2],
-        playerid3: specialRoles[3], playerid4: specialRoles[4], playerid5: specialRoles[5],
-        playerid6: specialRoles[6], playerid7: specialRoles[0], playerid8: specialRoles[1],
-        playerid9: specialRoles[2], playerid10: specialRoles[3]
-      };
-      Object.entries(roleReplacements).forEach(([k, v]) => mRow = mRow.replace(new RegExp(`\\{${k}\\}`, 'g'), v));
-      results.teammentality.push(mRow.split(','));
-    });
-
-    // 5. TeamSheet
+    // 4. Determine Starting Players
     const starting_order = [0, 3, 4, 6, 7, 10, 13, 15, 23, 25, 27];
     let startingPlayers = [];
     
@@ -306,7 +285,36 @@ export function processData(teams, players, isNationalTeam = false, startManager
         startingPlayers.push(-1);
       }
     }
+
+    // 5. TeamMentality
+    let mentTemplateKey = `template${templateNum}`;
+    if (!templates.teammentality.templates[mentTemplateKey]) mentTemplateKey = 'template1';
     
+    templates.teammentality.templates[mentTemplateKey].forEach(mTemplate => {
+      let mRow = mTemplate.replace(/{teamid}/g, teamId).replace(/{team_id}/g, teamId);
+      
+      const roleReplacements = {
+        rightfreekicktakerid: specialRoles[0], longkicktakerid: specialRoles[1],
+        rightcornerkicktakerid: specialRoles[2], leftcornerkicktakerid: specialRoles[3],
+        captainid: specialRoles[4], leftfreekicktakerid: specialRoles[5], penaltytakerid: specialRoles[6],
+        playeridrelatedtoteam: specialRoles[0],
+        playerid0: startingPlayers[0] !== undefined ? startingPlayers[0] : -1,
+        playerid1: startingPlayers[1] !== undefined ? startingPlayers[1] : -1,
+        playerid2: startingPlayers[2] !== undefined ? startingPlayers[2] : -1,
+        playerid3: startingPlayers[3] !== undefined ? startingPlayers[3] : -1,
+        playerid4: startingPlayers[4] !== undefined ? startingPlayers[4] : -1,
+        playerid5: startingPlayers[5] !== undefined ? startingPlayers[5] : -1,
+        playerid6: startingPlayers[6] !== undefined ? startingPlayers[6] : -1,
+        playerid7: startingPlayers[7] !== undefined ? startingPlayers[7] : -1,
+        playerid8: startingPlayers[8] !== undefined ? startingPlayers[8] : -1,
+        playerid9: startingPlayers[9] !== undefined ? startingPlayers[9] : -1,
+        playerid10: startingPlayers[10] !== undefined ? startingPlayers[10] : -1
+      };
+      Object.entries(roleReplacements).forEach(([k, v]) => mRow = mRow.replace(new RegExp(`\\{${k}\\}`, 'g'), v));
+      results.teammentality.push(mRow.split(','));
+    });
+
+    // 6. TeamSheet
     let tsRow = templates.teamsheet.template.replace(/{teamid}/g, teamId).replace(/{team_id}/g, teamId);
     for (let i = 0; i < 11; i++) {
       tsRow = tsRow.replace(new RegExp(`\\{playerid${i}\\}`, 'g'), startingPlayers[i] !== undefined ? startingPlayers[i] : -1);

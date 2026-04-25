@@ -203,18 +203,25 @@ export async function runScraper(
     const teams = [];
 
     if (mode === 'worldcup') {
-      const matchBoxes = doc.querySelectorAll('.box.pokalWettbewerbSpieltagsbox');
-      const box = matchBoxes[matchBoxes.length - 1];
-      if (box) {
-        box.querySelectorAll('tr.begegnungZeile').forEach(row => {
-          ['heim', 'gast'].forEach(side => {
-            const a = row.querySelector(`.verein-${side} .vereinsname a`);
-            if (a && a.title && a.href) {
-              teams.push({ name: a.title, href: a.href, squadUrl: null, nationality: a.title.trim() });
-            }
-          });
+      // Group-table layout: each `.box` contains an `h2` ("Group table X") and a `table.items`
+      const seen = new Set();
+      doc.querySelectorAll('.box').forEach(box => {
+        const h2 = box.querySelector('h2.content-box-headline');
+        if (!h2 || !h2.textContent.trim().toLowerCase().startsWith('group table')) return;
+        box.querySelectorAll('table.items tbody tr').forEach(row => {
+          // The team name anchor lives in: td.no-border-links.hauptlink > a[title]
+          const td = row.querySelector('td.no-border-links.hauptlink');
+          if (!td) return;
+          const a = td.querySelector('a[title][href]');
+          if (!a || !a.title || !a.getAttribute('href')) return;
+          const title = a.title.trim();
+          const href = a.getAttribute('href');
+          if (!seen.has(title)) {
+            seen.add(title);
+            teams.push({ name: title, href, squadUrl: null, nationality: title });
+          }
         });
-      }
+      });
     } else if (mode === 'cup') {
       doc.querySelectorAll('.large-6.columns, .large-12.columns').forEach(col => {
         const tbody = col.querySelector('table.items tbody');
