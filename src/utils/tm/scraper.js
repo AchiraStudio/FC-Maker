@@ -68,14 +68,14 @@ export async function runScraper(
     if (parts.length === 0) return [{ firstName: '', lastName: '' }];
     if (parts.length === 1) return [{ firstName: parts[0], lastName: '' }];
     if (parts.length === 2) return [{ firstName: parts[0], lastName: parts[1] }];
-    
+
     // 3 parts: A B C -> A B + C, or A + B C
     if (parts.length === 3) {
       combos.push({ firstName: `${parts[0]} ${parts[1]}`, lastName: parts[2] });
       combos.push({ firstName: parts[0], lastName: `${parts[1]} ${parts[2]}` });
       return combos;
     }
-    
+
     // 4+ parts
     combos.push({ firstName: parts[0], lastName: parts.slice(1).join(' ') });
     combos.push({ firstName: `${parts[0]} ${parts[1]}`, lastName: parts.slice(2).join(' ') });
@@ -148,8 +148,8 @@ export async function runScraper(
 
       const text = await res.text();
       if (text.includes("Checking your browser") || text.includes("cf-browser-verification") ||
-          text.includes("Just a moment") || text.includes("challenge-platform") ||
-          text.includes("cf-challenge") || text.length < 500) {
+        text.includes("Just a moment") || text.includes("challenge-platform") ||
+        text.includes("cf-challenge") || text.length < 500) {
         log(`  ⚠️ Anti-bot / Cloudflare challenge detected. Retry ${retryCount + 1}/3...`);
         await new Promise(r => setTimeout(r, 5000 + retryCount * 2000));
         return safeRequest(targetUrl, retryCount + 1);
@@ -446,11 +446,11 @@ export async function runScraper(
     for (const p of players) {
       const displayName = p.FullName || `${p.Firstname} ${p.Lastname}`;
       log(`  🔎 Checking: "${displayName}"`);
-      
+
       let existing = null;
       let matchedCombo = null;
       const combos = p.FullName ? getNameCombinations(p.FullName) : [{ firstName: p.Firstname, lastName: p.Lastname }];
-      
+
       for (const combo of combos) {
         existing = findExistingPlayer(combo.firstName, combo.lastName);
         if (existing) {

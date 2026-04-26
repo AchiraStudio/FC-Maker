@@ -30,34 +30,34 @@ export const random_values = {
 };
 
 export const names_data = {
-    "England": {
-        "first_names": ["James", "Oliver", "Harry", "Jack", "William", "Thomas", "George", "Charlie", "Oscar", "Henry", "Arthur", "Leo", "Noah", "Ethan", "Mason", "Lucas", "Alexander", "Daniel", "Samuel", "Benjamin", "Emily", "Olivia", "Amelia", "Isla", "Ava", "Mia", "Isabella", "Sophia", "Grace", "Lily"],
-        "last_names": ["Smith", "Jones", "Williams", "Taylor", "Brown", "Davies", "Evans", "Wilson", "Thomas", "Roberts", "Johnson", "Lewis", "Walker", "Robinson", "Wood", "Thompson", "White", "Watson", "Jackson", "Wright", "Green", "Harris", "Cooper", "King", "Lee", "Martin", "Clarke", "James", "Morgan", "Hughes"]
-    },
-    "Spain": {
-        "first_names": ["Carlos", "David", "José", "Francisco", "Antonio", "Manuel", "Juan", "Jorge", "Miguel", "Álvaro", "Sergio", "Pablo", "Alejandro", "Daniel", "Fernando", "María", "Carmen", "Ana", "Isabel", "Laura", "Cristina", "Lucía", "Marta", "Elena", "Paula", "Sara", "Raquel", "Andrea", "Julia", "Silvia"],
-        "last_names": ["García", "Rodríguez", "Martínez", "López", "Sánchez", "González", "Hernández", "Pérez", "Gómez", "Martín", "Jiménez", "Ruiz", "Hernández", "Díaz", "Moreno", "Muñoz", "Álvarez", "Romero", "Alonso", "Gutiérrez", "Navarro", "Torres", "Domínguez", "Vázquez", "Ramos", "Gil", "Ramírez", "Serrano", "Molina", "Blanco"]
-    },
-    "Germany": {
-        "first_names": ["Lukas", "Leon", "Maximilian", "Jonas", "Felix", "Tim", "Julian", "Niklas", "Alexander", "Moritz", "Lukas", "Marcel", "Kevin", "Jan", "Lars", "Anna", "Julia", "Sarah", "Laura", "Lisa", "Marie", "Sophie", "Katharina", "Maria", "Johanna", "Lena", "Christina", "Sabine", "Nina", "Claudia"],
-        "last_names": ["Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner", "Becker", "Schulz", "Hoffmann", "Koch", "Richter", "Klein", "Wolf", "Schröder", "Neumann", "Schwarz", "Braun", "Zimmermann", "Krüger", "Hartmann", "Werner", "Lange", "Schmitt", "Vogel", "Friedrich", "Klaus", "Jung", "Hahn", "Körner"]
-    },
-    "France": {
-        "first_names": ["Antoine", "Lucas", "Hugo", "Nathan", "Théo", "Louis", "Raphaël", "Gabriel", "Arthur", "Paul", "Ethan", "Adam", "Sacha", "Maxime", "Alexandre", "Emma", "Léa", "Chloé", "Manon", "Jade", "Camille", "Zoé", "Inès", "Lina", "Alice", "Louise", "Juliette", "Clara", "Sarah", "Eva"],
-        "last_names": ["Martin", "Bernard", "Dubois", "Thomas", "Robert", "Richard", "Petit", "Durand", "Leroy", "Moreau", "Simon", "Laurent", "Lefebvre", "Michel", "Garcia", "David", "Bertrand", "Roux", "Vincent", "Fournier", "Morel", "Girard", "André", "Lefevre", "Mercier", "Dupont", "Lambert", "Fontaine", "Rousseau", "Vincent"]
-    },
-    "Italy": {
-        "first_names": ["Marco", "Alessandro", "Lorenzo", "Luca", "Andrea", "Matteo", "Federico", "Giuseppe", "Roberto", "Stefano", "Davide", "Francesco", "Giovanni", "Paolo", "Fabio", "Sofia", "Giulia", "Aurora", "Martina", "Giorgia", "Sara", "Valentina", "Elena", "Chiara", "Alice", "Francesca", "Laura", "Beatrice", "Anna", "Elisa"],
-        "last_names": ["Rossi", "Russo", "Ferrari", "Esposito", "Bianchi", "Romano", "Colombo", "Ricci", "Marino", "Greco", "Bruno", "Gallo", "Conti", "De Luca", "Mancini", "Costa", "Giordano", "Rizzo", "Lombardi", "Moretti", "Barbieri", "Fontana", "Santoro", "Mariani", "Rinaldi", "Caruso", "Ferrara", "Gatto", "Leone", "Longo"]
-    },
-    "Brazil": {
-        "first_names": ["Lucas", "Gabriel", "Pedro", "Matheus", "Rafael", "Guilherme", "Bruno", "João", "Felipe", "Gustavo", "Thiago", "Diego", "Vinícius", "Carlos", "Eduardo", "Ana", "Julia", "Mariana", "Isabela", "Camila", "Fernanda", "Beatriz", "Larissa", "Gabriela", "Carolina", "Amanda", "Letícia", "Patrícia", "Raquel", "Daniela"],
-        "last_names": ["Silva", "Santos", "Oliveira", "Souza", "Rodrigues", "Ferreira", "Alves", "Pereira", "Lima", "Gomes", "Costa", "Ribeiro", "Martins", "Carvalho", "Almeida", "Lopes", "Soares", "Fernandes", "Vieira", "Barbosa", "Rocha", "Dias", "Nascimento", "Andrade", "Moreira", "Nunes", "Marques", "Machado", "Mendes", "Freitas"]
-    },
-    "Argentina": {
-        "first_names": ["Santiago", "Matías", "Nicolás", "Gonzalo", "Tomás", "Diego", "Federico", "Agustín", "Maximiliano", "Alejandro", "Joaquín", "Martín", "Luciano", "Facundo", "Brian", "Sofía", "Camila", "Valentina", "Luciana", "María", "Florencia", "Sol", "Micaela", "Agustina", "Laura", "Natalia", "Melina", "Andrea", "Paula", "Romina"],
-        "last_names": ["González", "Rodríguez", "López", "Fernández", "García", "Martínez", "Pérez", "Gómez", "Sánchez", "Romero", "Díaz", "Torres", "Flores", "Acosta", "Giménez", "Álvarez", "Ruiz", "Herrera", "Molina", "Sosa", "Gutiérrez", "Córdoba", "Ortiz", "Vargas", "Castro", "Ramírez", "Medina", "Suárez", "Aguirre", "Ríos"]
-    }
+  "England": {
+    "first_names": ["James", "Oliver", "Harry", "Jack", "William", "Thomas", "George", "Charlie", "Oscar", "Henry", "Arthur", "Leo", "Noah", "Ethan", "Mason", "Lucas", "Alexander", "Daniel", "Samuel", "Benjamin", "Emily", "Olivia", "Amelia", "Isla", "Ava", "Mia", "Isabella", "Sophia", "Grace", "Lily"],
+    "last_names": ["Smith", "Jones", "Williams", "Taylor", "Brown", "Davies", "Evans", "Wilson", "Thomas", "Roberts", "Johnson", "Lewis", "Walker", "Robinson", "Wood", "Thompson", "White", "Watson", "Jackson", "Wright", "Green", "Harris", "Cooper", "King", "Lee", "Martin", "Clarke", "James", "Morgan", "Hughes"]
+  },
+  "Spain": {
+    "first_names": ["Carlos", "David", "José", "Francisco", "Antonio", "Manuel", "Juan", "Jorge", "Miguel", "Álvaro", "Sergio", "Pablo", "Alejandro", "Daniel", "Fernando", "María", "Carmen", "Ana", "Isabel", "Laura", "Cristina", "Lucía", "Marta", "Elena", "Paula", "Sara", "Raquel", "Andrea", "Julia", "Silvia"],
+    "last_names": ["García", "Rodríguez", "Martínez", "López", "Sánchez", "González", "Hernández", "Pérez", "Gómez", "Martín", "Jiménez", "Ruiz", "Hernández", "Díaz", "Moreno", "Muñoz", "Álvarez", "Romero", "Alonso", "Gutiérrez", "Navarro", "Torres", "Domínguez", "Vázquez", "Ramos", "Gil", "Ramírez", "Serrano", "Molina", "Blanco"]
+  },
+  "Germany": {
+    "first_names": ["Lukas", "Leon", "Maximilian", "Jonas", "Felix", "Tim", "Julian", "Niklas", "Alexander", "Moritz", "Lukas", "Marcel", "Kevin", "Jan", "Lars", "Anna", "Julia", "Sarah", "Laura", "Lisa", "Marie", "Sophie", "Katharina", "Maria", "Johanna", "Lena", "Christina", "Sabine", "Nina", "Claudia"],
+    "last_names": ["Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner", "Becker", "Schulz", "Hoffmann", "Koch", "Richter", "Klein", "Wolf", "Schröder", "Neumann", "Schwarz", "Braun", "Zimmermann", "Krüger", "Hartmann", "Werner", "Lange", "Schmitt", "Vogel", "Friedrich", "Klaus", "Jung", "Hahn", "Körner"]
+  },
+  "France": {
+    "first_names": ["Antoine", "Lucas", "Hugo", "Nathan", "Théo", "Louis", "Raphaël", "Gabriel", "Arthur", "Paul", "Ethan", "Adam", "Sacha", "Maxime", "Alexandre", "Emma", "Léa", "Chloé", "Manon", "Jade", "Camille", "Zoé", "Inès", "Lina", "Alice", "Louise", "Juliette", "Clara", "Sarah", "Eva"],
+    "last_names": ["Martin", "Bernard", "Dubois", "Thomas", "Robert", "Richard", "Petit", "Durand", "Leroy", "Moreau", "Simon", "Laurent", "Lefebvre", "Michel", "Garcia", "David", "Bertrand", "Roux", "Vincent", "Fournier", "Morel", "Girard", "André", "Lefevre", "Mercier", "Dupont", "Lambert", "Fontaine", "Rousseau", "Vincent"]
+  },
+  "Italy": {
+    "first_names": ["Marco", "Alessandro", "Lorenzo", "Luca", "Andrea", "Matteo", "Federico", "Giuseppe", "Roberto", "Stefano", "Davide", "Francesco", "Giovanni", "Paolo", "Fabio", "Sofia", "Giulia", "Aurora", "Martina", "Giorgia", "Sara", "Valentina", "Elena", "Chiara", "Alice", "Francesca", "Laura", "Beatrice", "Anna", "Elisa"],
+    "last_names": ["Rossi", "Russo", "Ferrari", "Esposito", "Bianchi", "Romano", "Colombo", "Ricci", "Marino", "Greco", "Bruno", "Gallo", "Conti", "De Luca", "Mancini", "Costa", "Giordano", "Rizzo", "Lombardi", "Moretti", "Barbieri", "Fontana", "Santoro", "Mariani", "Rinaldi", "Caruso", "Ferrara", "Gatto", "Leone", "Longo"]
+  },
+  "Brazil": {
+    "first_names": ["Lucas", "Gabriel", "Pedro", "Matheus", "Rafael", "Guilherme", "Bruno", "João", "Felipe", "Gustavo", "Thiago", "Diego", "Vinícius", "Carlos", "Eduardo", "Ana", "Julia", "Mariana", "Isabela", "Camila", "Fernanda", "Beatriz", "Larissa", "Gabriela", "Carolina", "Amanda", "Letícia", "Patrícia", "Raquel", "Daniela"],
+    "last_names": ["Silva", "Santos", "Oliveira", "Souza", "Rodrigues", "Ferreira", "Alves", "Pereira", "Lima", "Gomes", "Costa", "Ribeiro", "Martins", "Carvalho", "Almeida", "Lopes", "Soares", "Fernandes", "Vieira", "Barbosa", "Rocha", "Dias", "Nascimento", "Andrade", "Moreira", "Nunes", "Marques", "Machado", "Mendes", "Freitas"]
+  },
+  "Argentina": {
+    "first_names": ["Santiago", "Matías", "Nicolás", "Gonzalo", "Tomás", "Diego", "Federico", "Agustín", "Maximiliano", "Alejandro", "Joaquín", "Martín", "Luciano", "Facundo", "Brian", "Sofía", "Camila", "Valentina", "Luciana", "María", "Florencia", "Sol", "Micaela", "Agustina", "Laura", "Natalia", "Melina", "Andrea", "Paula", "Romina"],
+    "last_names": ["González", "Rodríguez", "López", "Fernández", "García", "Martínez", "Pérez", "Gómez", "Sánchez", "Romero", "Díaz", "Torres", "Flores", "Acosta", "Giménez", "Álvarez", "Ruiz", "Herrera", "Molina", "Sosa", "Gutiérrez", "Córdoba", "Ortiz", "Vargas", "Castro", "Ramírez", "Medina", "Suárez", "Aguirre", "Ríos"]
+  }
 };
 
 // Replicating the JSON template structure for EA database tables
@@ -95,37 +95,37 @@ export const templates = {
       "cksupport3", "haslargeflag", "trainingstadium", "form", "genericint1",
       "cksupport4", "trait1vstrong", "matchdayattackrating"
     ],
-    template: "{teamid},26,218,2500000,255,1,255,1886,1,228,1,53,3,51,206,3,1,1,255,1,{team_name},60,0,-1,0,{rightfreekicktakerid},0,10,-1,0,65,0,2,3,0,0,9,0,0,60704,0,0,285,18,0,1,85,0,1,0,84,85,84,0,1,85,0,-1,85,0,0,0,{longkicktakerid},131586,2,{rightcornerkicktakerid},0,0,0,0,0,0,14,4,{leftcornerkicktakerid},7,{teamid},0,131586,0,0,0,0,{captainid},1,0,{leftfreekicktakerid},0,13,0,3,0,85,151,9,0,{penaltytakerid},0,0,{freekicktakerid},2,9,0,0,366,0,-1,0,263170,84"
+    template: "{teamid},26,218,2500000,255,1,255,1886,1,228,1,53,3,51,206,3,1,1,255,1,{team_name},60,0,-1,0,{rightfreekicktakerid},0,10,-1,0,65,0,2,3,0,0,9,0,{stadiumcapacity},60704,0,0,285,{rivalteam},0,1,85,0,1,0,84,85,84,0,1,85,0,-1,85,0,0,0,{longkicktakerid},131586,2,{rightcornerkicktakerid},0,0,0,0,0,0,14,4,{leftcornerkicktakerid},7,{teamid},0,131586,0,0,0,0,{captainid},1,0,{leftfreekicktakerid},0,13,0,3,0,85,151,9,0,{penaltytakerid},0,0,{freekicktakerid},2,9,0,0,366,0,-1,0,263170,84"
   },
   teamkits: {
-      columns: [
-        "teamkitid", "chestbadge", "shortsnumberplacementcode", "shortsnumbercolorprimg",
-        "teamcolorsecb", "shortsrenderingdetailmaptype", "jerseyfrontnumberplacementcode",
-        "jerseynumbercolorsecr", "jerseynumbercolorprimr", "jerseynumbercolorprimg",
-        "shortsnumbercolorsecb", "teamcolorprimg", "shortsnumbercolorterb",
-        "shortsnumbercolorprimr", "teamcolortertb", "jerseynumbercolorterg",
-        "jerseynameoutlinecolorr", "shortsnumbercolorprimb", "jerseynamelayouttype",
-        "jerseynumbercolorterr", "jerseyrightsleevebadge", "jerseynumbercolorprimb",
-        "jerseyshapestyle", "jerseybacknameplacementcode", "teamcolorprimr",
-        "jerseynamecolorg", "jerseyleftsleevebadge", "jerseynameoutlinecolorb",
-        "teamcolorsecg", "shortsnumbercolorsecg", "teamcolortertr",
-        "jerseynumbercolorsecg", "renderingmaterialtype", "shortsnumbercolorterr",
-        "teamcolorsecr", "jerseycollargeometrytype", "shortsnumbercolorterg",
-        "jerseynamecolorr", "teamcolorprimb", "jerseyrenderingdetailmaptype",
-        "jerseynameoutlinecolorg", "jerseynumbercolorsecb", "jerseynamecolorb",
-        "jerseynumbercolorterb", "teamcolortertg", "shortsnumbercolorsecr",
-        "jerseybacknamefontcase", "teamkittypetechid", "powid", "isinheritbasedetailmap",
-        "islocked", "numberfonttype", "shortstemplateindex", "jerseynamefonttype",
-        "teamcolorprimpercent", "isgeneric", "teamcolorsecpercent", "year",
-        "jerseytemplateindex", "captainarmband", "teamtechid", "isembargoed",
-        "hasadvertisingkit", "jerseynameoutlinewidth", "dlc", "teamcolortertpercent",
-        "armbandtype", "shortsnumberfonttype", "shortstyle", "jerseyfit",
-        "sockstemplateindex", "jerseyrestriction"
-      ],
+    columns: [
+      "teamkitid", "chestbadge", "shortsnumberplacementcode", "shortsnumbercolorprimg",
+      "teamcolorsecb", "shortsrenderingdetailmaptype", "jerseyfrontnumberplacementcode",
+      "jerseynumbercolorsecr", "jerseynumbercolorprimr", "jerseynumbercolorprimg",
+      "shortsnumbercolorsecb", "teamcolorprimg", "shortsnumbercolorterb",
+      "shortsnumbercolorprimr", "teamcolortertb", "jerseynumbercolorterg",
+      "jerseynameoutlinecolorr", "shortsnumbercolorprimb", "jerseynamelayouttype",
+      "jerseynumbercolorterr", "jerseyrightsleevebadge", "jerseynumbercolorprimb",
+      "jerseyshapestyle", "jerseybacknameplacementcode", "teamcolorprimr",
+      "jerseynamecolorg", "jerseyleftsleevebadge", "jerseynameoutlinecolorb",
+      "teamcolorsecg", "shortsnumbercolorsecg", "teamcolortertr",
+      "jerseynumbercolorsecg", "renderingmaterialtype", "shortsnumbercolorterr",
+      "teamcolorsecr", "jerseycollargeometrytype", "shortsnumbercolorterg",
+      "jerseynamecolorr", "teamcolorprimb", "jerseyrenderingdetailmaptype",
+      "jerseynameoutlinecolorg", "jerseynumbercolorsecb", "jerseynamecolorb",
+      "jerseynumbercolorterb", "teamcolortertg", "shortsnumbercolorsecr",
+      "jerseybacknamefontcase", "teamkittypetechid", "powid", "isinheritbasedetailmap",
+      "islocked", "numberfonttype", "shortstemplateindex", "jerseynamefonttype",
+      "teamcolorprimpercent", "isgeneric", "teamcolorsecpercent", "year",
+      "jerseytemplateindex", "captainarmband", "teamtechid", "isembargoed",
+      "hasadvertisingkit", "jerseynameoutlinewidth", "dlc", "teamcolortertpercent",
+      "armbandtype", "shortsnumberfonttype", "shortstyle", "jerseyfit",
+      "sockstemplateindex", "jerseyrestriction"
+    ],
     templates: [
-        "{startingKitId},0,1,30,230,0,0,220,220,220,220,19,220,234,230,12,12,45,1,12,13,220,0,1,210,220,0,12,230,220,230,220,0,220,230,0,220,220,51,0,12,220,220,12,230,220,0,0,-1,0,0,262,0,135,49,0,44,0,0,13,{teamid},0,0,2,0,88,1,262,0,0,0,0",
-        "{startingKitId},0,1,30,230,0,0,220,220,220,220,19,220,234,230,12,12,45,1,12,13,220,0,1,210,220,0,12,230,220,230,220,0,220,230,0,220,220,51,0,12,220,220,12,230,220,0,1,-1,0,0,262,0,135,49,0,44,0,0,13,{teamid},0,0,2,0,88,1,262,0,0,0,0",
-        "{startingKitId},0,1,30,230,0,0,220,220,220,220,19,220,234,230,12,12,45,1,12,13,220,0,1,210,220,0,12,230,220,230,220,0,220,230,0,220,220,51,0,12,220,220,12,230,220,0,2,-1,0,0,262,0,135,49,0,44,0,0,13,{teamid},0,0,2,0,88,1,262,0,0,0,0"
+      "{startingKitId},0,1,30,230,0,0,220,220,220,220,19,220,234,230,12,12,45,1,12,13,220,0,1,210,220,0,12,230,220,230,220,0,220,230,0,220,220,51,0,12,220,220,12,230,220,0,0,-1,0,0,262,0,135,49,0,44,0,0,13,{teamid},0,0,2,0,88,1,262,0,0,0,0",
+      "{startingKitId},0,1,30,230,0,0,220,220,220,220,19,220,234,230,12,12,45,1,12,13,220,0,1,210,220,0,12,230,220,230,220,0,220,230,0,220,220,51,0,12,220,220,12,230,220,0,1,-1,0,0,262,0,135,49,0,44,0,0,13,{teamid},0,0,2,0,88,1,262,0,0,0,0",
+      "{startingKitId},0,1,30,230,0,0,220,220,220,220,19,220,234,230,12,12,45,1,12,13,220,0,1,210,220,0,12,230,220,230,220,0,220,230,0,220,220,51,0,12,220,220,12,230,220,0,2,-1,0,0,262,0,135,49,0,44,0,0,13,{teamid},0,0,2,0,88,1,262,0,0,0,0"
     ]
   },
   teammentality: {
