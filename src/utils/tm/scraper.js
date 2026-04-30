@@ -9,7 +9,8 @@ export async function runScraper(
   startTeamId = 1001,
   startPlayerId = 200000,
   defaultPlayers = [],
-  playerNamesMap = new Map()
+  playerNamesMap = new Map(),
+  teamFilter = ""
 ) {
   let isRunning = true;
   const state = {
@@ -32,7 +33,7 @@ export async function runScraper(
   log(`📊 Name→ID map: ${nameToIdMap.size} entries`);
 
   // ─── Build existing players indices ──────────────────────────────────
-  const existingByIdPair = new Map(); // "firstId|lastId" → player data
+  const existingByIdPair = new Map();
 
   for (const p of defaultPlayers) {
     const firstId = parseInt(p.firstnameid, 10);
@@ -50,17 +51,77 @@ export async function runScraper(
   }
   log(`📊 Existing players by ID pair: ${existingByIdPair.size} entries`);
 
-  // Debug: check test key
-  const testKey = `10742|2970`;
-  if (existingByIdPair.has(testKey)) {
-    log(`✅ Test key ${testKey} FOUND in ID index.`);
-  } else {
-    log(`❌ Test key ${testKey} NOT found in ID index. Will use direct fallback.`);
+  // ========== TEAM FILTER LOGIC ==========
+  let allowedTeamsSet = null;
+  if (teamFilter && teamFilter.trim()) {
+    const rawFilters = teamFilter.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    if (rawFilters.length > 0) {
+      const normalizeName = (name) => name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      const aliasMap = {
+        "st. kitts": "saint kitts and nevis",
+        "st kitts": "saint kitts and nevis",
+        "saint kitts": "saint kitts and nevis",
+        "st. lucia": "saint lucia",
+        "st lucia": "saint lucia",
+        "trinidad": "trinidad and tobago",
+        "tobago": "trinidad and tobago",
+        "usa": "united states",
+        "us": "united states",
+        "bosnia": "bosnia and herzegovina",
+        "bosnia-herzegovina": "bosnia and herzegovina",
+        "macedonia": "north macedonia",
+        "czechia": "czech republic",
+        "holland": "netherlands",
+        "south korea": "korea republic",
+        "north korea": "korea dpr",
+        "dpr korea": "korea dpr",
+        "uae": "united arab emirates",
+        "ivory coast": "côte d'ivoire",
+        "cote d'ivoire": "côte d'ivoire",
+        "democratic republic of congo": "congo dr",
+        "dr congo": "congo dr"
+      };
+      const allowed = new Set();
+      for (let f of rawFilters) {
+        let norm = normalizeName(f);
+        if (aliasMap[norm]) norm = aliasMap[norm];
+        allowed.add(norm);
+        allowed.add(normalizeName(f));
+      }
+      allowedTeamsSet = allowed;
+      log(`🚩 Team filter active: ${rawFilters.length} team(s). Only matching teams will be scraped.`);
+    }
   }
 
-  // ─── Helper to generate name combinations ─────────────────────────────
+  const shouldScrapeTeam = (teamName) => {
+    if (!allowedTeamsSet) return true;
+    const normalized = teamName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    if (allowedTeamsSet.has(normalized)) return true;
+    const reverseAlias = {
+      "saint kitts and nevis": ["st. kitts", "st kitts", "saint kitts"],
+      "trinidad and tobago": ["trinidad", "tobago"],
+      "united states": ["usa", "us"],
+      "bosnia and herzegovina": ["bosnia", "bosnia-herzegovina"],
+      "north macedonia": ["macedonia"],
+      "czech republic": ["czechia"],
+      "netherlands": ["holland"],
+      "korea republic": ["south korea"],
+      "korea dpr": ["north korea", "dpr korea"],
+      "united arab emirates": ["uae"],
+      "côte d'ivoire": ["ivory coast", "cote d'ivoire"],
+      "congo dr": ["democratic republic of congo", "dr congo"]
+    };
+    for (let [official, synonyms] of Object.entries(reverseAlias)) {
+      if (synonyms.includes(normalized) && allowedTeamsSet.has(official)) return true;
+    }
+    for (let allowed of allowedTeamsSet) {
+      if (normalized.includes(allowed) || allowed.includes(normalized)) return true;
+    }
+    return false;
+  };
+
+  // ─── Helper: generate name combinations for multi‑part names ─────────
   const getNameCombinations = (fullName) => {
-    // replace hyphens with spaces
     const cleanName = fullName.trim().replace(/-/g, ' ').replace(/\s+/g, ' ');
     const parts = cleanName.split(' ').filter(Boolean);
     const combos = [];
@@ -69,27 +130,23 @@ export async function runScraper(
     if (parts.length === 1) return [{ firstName: parts[0], lastName: '' }];
     if (parts.length === 2) return [{ firstName: parts[0], lastName: parts[1] }];
 
-    // 3 parts: A B C -> A B + C, or A + B C
     if (parts.length === 3) {
       combos.push({ firstName: `${parts[0]} ${parts[1]}`, lastName: parts[2] });
       combos.push({ firstName: parts[0], lastName: `${parts[1]} ${parts[2]}` });
       return combos;
     }
 
-    // 4+ parts
     combos.push({ firstName: parts[0], lastName: parts.slice(1).join(' ') });
     combos.push({ firstName: `${parts[0]} ${parts[1]}`, lastName: parts.slice(2).join(' ') });
     combos.push({ firstName: parts[0], lastName: parts[parts.length - 1] });
     return combos;
   };
 
-  // ─── Find existing player (ID pair + direct fallback scan) ───────────
   const findExistingPlayer = (firstNameStr, lastNameStr) => {
     const firstNorm = firstNameStr?.trim().toLowerCase();
     const lastNorm = lastNameStr?.trim().toLowerCase();
     if (!firstNorm || !lastNorm) return null;
 
-    // Stage 1: ID‑based using index
     const firstId = nameToIdMap.get(firstNorm);
     const lastId = nameToIdMap.get(lastNorm);
     if (firstId && lastId) {
@@ -98,7 +155,6 @@ export async function runScraper(
       if (existing) return { playerid: existing.playerid };
     }
 
-    // Stage 2: Direct fallback scan of defaultPlayers
     if (firstId && lastId) {
       for (const p of defaultPlayers) {
         const pFirstId = parseInt(p.firstnameid, 10);
@@ -109,7 +165,6 @@ export async function runScraper(
       }
     }
 
-    // Stage 3: If IDs missing, try matching names directly (rare)
     for (const p of defaultPlayers) {
       const pFirstId = parseInt(p.firstnameid, 10);
       const pLastId = parseInt(p.lastnameid, 10);
@@ -123,21 +178,18 @@ export async function runScraper(
     return null;
   };
 
-  // ────────────────── Network & parsing helpers (unchanged) ────────────
+  // ────────────────── Network helpers ──────────────────────────────────
   const safeRequest = async (targetUrl, retryCount = 0) => {
     if (retryCount >= 3 || !isRunning) return null;
     try {
       await new Promise(r => setTimeout(r, 1500 + Math.random() * 1500));
       let proxyUrl = targetUrl.replace("https://www.transfermarkt.com", "/tm");
       const res = await fetch(proxyUrl, { method: 'GET', redirect: 'follow' });
-
       if (!res.ok) {
-        // 405 = Method Not Allowed — the proxy/WAF rejects the verb; no point retrying
         if (res.status === 405) {
           log(`  ❌ HTTP 405 (Method Not Allowed) from server — check proxy config. Not retrying.`);
           return null;
         }
-        // 403 / 429 / 503 are also usually un-retryable in quick succession
         if ([403, 429, 503].includes(res.status)) {
           log(`  ⚠️ HTTP ${res.status} — rate-limited or blocked. Retry ${retryCount + 1}/3...`);
           await new Promise(r => setTimeout(r, 6000 + retryCount * 3000));
@@ -145,7 +197,6 @@ export async function runScraper(
         }
         throw new Error(`HTTP ${res.status}`);
       }
-
       const text = await res.text();
       if (text.includes("Checking your browser") || text.includes("cf-browser-verification") ||
         text.includes("Just a moment") || text.includes("challenge-platform") ||
@@ -195,6 +246,7 @@ export async function runScraper(
     return baseUrl + '/plus/1';
   };
 
+  // ────────────────── Team list extraction ─────────────────────────────
   const getTeams = async () => {
     const html = await safeRequest(url);
     if (!html) return [];
@@ -203,13 +255,11 @@ export async function runScraper(
     const teams = [];
 
     if (mode === 'worldcup') {
-      // Group-table layout: each `.box` contains an `h2` ("Group table X") and a `table.items`
       const seen = new Set();
       doc.querySelectorAll('.box').forEach(box => {
         const h2 = box.querySelector('h2.content-box-headline');
         if (!h2 || !h2.textContent.trim().toLowerCase().startsWith('group table')) return;
         box.querySelectorAll('table.items tbody tr').forEach(row => {
-          // The team name anchor lives in: td.no-border-links.hauptlink > a[title]
           const td = row.querySelector('td.no-border-links.hauptlink');
           if (!td) return;
           const a = td.querySelector('a[title][href]');
@@ -232,7 +282,7 @@ export async function runScraper(
           });
         }
       });
-    } else {
+    } else { // league
       const tables = doc.querySelectorAll('table.items');
       for (const table of tables) {
         const tbody = table.querySelector('tbody');
@@ -269,6 +319,7 @@ export async function runScraper(
     return teams;
   };
 
+  // ────────────────── Parse squad list HTML ────────────────────────────
   const parseSquadList = (html, teamName) => {
     const players = [];
     const parser = new DOMParser();
@@ -374,8 +425,8 @@ export async function runScraper(
     });
   };
 
-  // ────────────────── Main extraction loop ─────────────────────────────
-  log("Initiating extraction with ID pair + direct scan fallback...");
+  // ────────────────── Main extraction loop with team filter ─────────────
+  log("Initiating extraction with team filter and duplicate prevention...");
   const scrapedTeams = await getTeams();
   if (!scrapedTeams.length) throw new Error("No teams found.");
   log(`Detected ${scrapedTeams.length} target teams.`);
@@ -386,6 +437,13 @@ export async function runScraper(
   for (let i = 0; i < scrapedTeams.length; i++) {
     if (!isRunning) break;
     const { name: teamName, href: teamUrl, squadUrl: directSquadUrl, nationality: teamNationality } = scrapedTeams[i];
+    
+    // ----- Apply team filter -----
+    if (!shouldScrapeTeam(teamName)) {
+      log(`⏭️ Skipping team "${teamName}" – not in filter.`);
+      continue;
+    }
+    
     const natLog = (mode === 'league' && teamNationality) ? ` [${teamNationality}]` : '';
     log(`Scraping Squad List: ${teamName}${natLog}...`);
 
@@ -460,7 +518,6 @@ export async function runScraper(
       }
 
       if (existing) {
-        // Use the matched combination for the final output
         p.Firstname = matchedCombo.firstName;
         p.Lastname = matchedCombo.lastName;
         p.Jerseyname = matchedCombo.lastName || matchedCombo.firstName;

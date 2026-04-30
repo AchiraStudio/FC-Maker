@@ -25,6 +25,7 @@ export default function TeamMaker() {
   const [startTeamKitId, setStartTeamKitId] = useState("17031");
   const [leagueId, setLeagueId] = useState(0);
   const [artificialId, setArtificialId] = useState(0);
+  const [teamFilter, setTeamFilter] = useState(""); // NEW
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeProgress, setScrapeProgress] = useState(0);
   const [scrapeLogs, setScrapeLogs] = useState(["• Scraper module initialized. Awaiting URL."]);
@@ -60,20 +61,15 @@ export default function TeamMaker() {
   useEffect(() => {
     const loadDefaultData = async () => {
       try {
-        // Helper to detect delimiter (tab or comma)
         const detectDelimiter = (line) => line.includes('\t') ? '\t' : ',';
 
         // ----- Load players.txt -----
         const playersRes = await fetch('/defaults/players.txt');
         if (!playersRes.ok) throw new Error('players.txt not found');
         
-        // players.txt is encoded in UTF-16 LE, so we must decode it manually
-        // because response.text() defaults to UTF-8 and mangles the characters.
         const buffer = await playersRes.arrayBuffer();
         const decoder = new TextDecoder('utf-16le');
         let playersText = decoder.decode(buffer);
-        
-        // Strip BOM and normalize line endings
         playersText = playersText.replace(/^\uFEFF/, '').replace(/\r/g, '');
         const playersLines = playersText.trim().split('\n');
         const playersDelim = detectDelimiter(playersLines[0]);
@@ -83,7 +79,6 @@ export default function TeamMaker() {
           const obj = {};
           playersHeaders.forEach((h, i) => {
             let val = row[i]?.trim();
-            // Remove possible surrounding quotes
             if (val && val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
             obj[h] = val;
           });
@@ -92,13 +87,9 @@ export default function TeamMaker() {
         setDefaultPlayers(players);
         logScrape(`📥 Loaded ${players.length} default players from players.txt`);
 
-        // Debug: check if sample row (10742,2970) exists
         const samplePlayer = players.find(p => p.firstnameid === '10742' && p.lastnameid === '2970');
-        if (samplePlayer) {
-          logScrape(`🔍 Sample player found: firstnameid=10742, lastnameid=2970 → playerid=${samplePlayer.playerid}`);
-        } else {
-          logScrape(`⚠️ Sample player (10742,2970) NOT found in players.txt – check delimiter or headers.`);
-        }
+        if (samplePlayer) logScrape(`🔍 Sample player found: firstnameid=10742, lastnameid=2970 → playerid=${samplePlayer.playerid}`);
+        else logScrape(`⚠️ Sample player (10742,2970) NOT found in players.txt – check delimiter or headers.`);
 
         // ----- Load playernames.txt -----
         const namesRes = await fetch('/defaults/playernames.txt');
@@ -113,14 +104,11 @@ export default function TeamMaker() {
           if (row.length < 3) continue;
           const nameid = parseInt(row[0], 10);
           const name = row[2]?.trim();
-          if (!isNaN(nameid) && name && name !== '') {
-            nameMap.set(nameid, name);
-          }
+          if (!isNaN(nameid) && name && name !== '') nameMap.set(nameid, name);
         }
         setPlayerNamesMap(nameMap);
         logScrape(`📥 Loaded ${nameMap.size} name mappings from playernames.txt`);
 
-        // Debug: check if names 10742 and 2970 exist
         const emilName = nameMap.get(10742);
         const auderoName = nameMap.get(2970);
         logScrape(`🔍 Name for 10742: ${emilName || 'NOT FOUND'}, Name for 2970: ${auderoName || 'NOT FOUND'}`);
@@ -148,11 +136,12 @@ export default function TeamMaker() {
     setScrapeProgress(0);
     setRawScrapeData(null);
     logScrape(`🚀 Commencing extraction — Mode: ${mode.toUpperCase()} | Deep Fetch: ${deepFetch ? "ON" : "OFF"} | Team ID: ${teamId} | Player ID: ${playerId}`);
+    if (teamFilter.trim()) logScrape(`🚩 Team filter active: ${teamFilter.split(/\r?\n/).filter(l=>l.trim()).length} team(s).`);
 
     try {
       const scraper = await runScraper(
         url.trim(), mode, deepFetch, logScrape, setScrapeProgress,
-        teamId, playerId, defaultPlayers, playerNamesMap
+        teamId, playerId, defaultPlayers, playerNamesMap, teamFilter
       );
       scraperControl.current = scraper.stop;
       
@@ -397,6 +386,31 @@ export default function TeamMaker() {
                   style={inputStyle}
                 />
               </div>
+            </div>
+
+            {/* NEW: Team Filter */}
+            <div>
+              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>
+                TEAM FILTER (one per line, empty = all teams)
+              </label>
+              <textarea
+                value={teamFilter}
+                onChange={(e) => setTeamFilter(e.target.value)}
+                disabled={isScraping}
+                rows={4}
+                placeholder="Nicaragua&#10;Haiti&#10;Cuba&#10;Curaçao&#10;Dominican Republic&#10;Suriname&#10;Trinidad and Tobago&#10;Albania&#10;Greece&#10;Armenia&#10;Bosnia and Herzegovina&#10;Bulgaria&#10;Kosovo"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  background: 'rgba(0,0,0,0.2)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontFamily: "'Poppins', sans-serif",
+                  fontSize: '0.9rem',
+                  resize: 'vertical'
+                }}
+              />
             </div>
 
             {/* Action Buttons */}
