@@ -42,12 +42,12 @@ const AVAILABLE_NATIONS = [
   { code: "Cambodia", name: "Cambodia" },
   { code: "Cameroon", name: "Cameroon" },
   { code: "Canada", name: "Canada" },
-  { code: "Cape Verde", name: "Cape Verde" },
+  { code: "Cape Verde Islands", name: "Cape Verde Islands" },
   { code: "Cayman Islands", name: "Cayman Islands" },
   { code: "Central African Republic", name: "Central African Republic" },
   { code: "Chad", name: "Chad" },
   { code: "Chile", name: "Chile" },
-  { code: "China", name: "China" },
+  { code: "China PR", name: "China PR" },
   { code: "Chinese Taipei", name: "Chinese Taipei" },
   { code: "Colombia", name: "Colombia" },
   { code: "Comoros", name: "Comoros" },
@@ -59,7 +59,7 @@ const AVAILABLE_NATIONS = [
   { code: "Cuba", name: "Cuba" },
   { code: "Curaçao", name: "Curaçao" },
   { code: "Cyprus", name: "Cyprus" },
-  { code: "Czechia", name: "Czechia" },
+  { code: "Czech Republic", name: "Czech Republic" },
   { code: "Denmark", name: "Denmark" },
   { code: "Djibouti", name: "Djibouti" },
   { code: "Dominica", name: "Dominica" },
@@ -99,10 +99,10 @@ const AVAILABLE_NATIONS = [
   { code: "Indonesia", name: "Indonesia" },
   { code: "Iran", name: "Iran" },
   { code: "Iraq", name: "Iraq" },
-  { code: "Ireland", name: "Ireland" },
+  { code: "Republic of Ireland", name: "Republic of Ireland" },
   { code: "Israel", name: "Israel" },
   { code: "Italy", name: "Italy" },
-  { code: "Ivory Coast", name: "Ivory Coast" },
+  { code: "Côte d'Ivoire", name: "Côte d'Ivoire" },
   { code: "Jamaica", name: "Jamaica" },
   { code: "Japan", name: "Japan" },
   { code: "Jordan", name: "Jordan" },
@@ -141,7 +141,7 @@ const AVAILABLE_NATIONS = [
   { code: "Myanmar", name: "Myanmar" },
   { code: "Namibia", name: "Namibia" },
   { code: "Nepal", name: "Nepal" },
-  { code: "Netherlands", name: "Netherlands" },
+  { code: "Holland", name: "Holland" },
   { code: "New Caledonia", name: "New Caledonia" },
   { code: "New Zealand", name: "New Zealand" },
   { code: "Nicaragua", name: "Nicaragua" },
@@ -165,7 +165,7 @@ const AVAILABLE_NATIONS = [
   { code: "Romania", name: "Romania" },
   { code: "Russia", name: "Russia" },
   { code: "Rwanda", name: "Rwanda" },
-  { code: "Saint Lucia", name: "Saint Lucia" },
+  { code: "St. Lucia", name: "St. Lucia" },
   { code: "Samoa", name: "Samoa" },
   { code: "San Marino", name: "San Marino" },
   { code: "Saudi Arabia", name: "Saudi Arabia" },
@@ -190,12 +190,12 @@ const AVAILABLE_NATIONS = [
   { code: "Sweden", name: "Sweden" },
   { code: "Switzerland", name: "Switzerland" },
   { code: "Syria", name: "Syria" },
-  { code: "São Tomé and Príncipe", name: "São Tomé and Príncipe" },
+  { code: "São Tomé e Príncipe", name: "São Tomé e Príncipe" },
   { code: "Tahiti", name: "Tahiti" },
   { code: "Tajikistan", name: "Tajikistan" },
   { code: "Tanzania", name: "Tanzania" },
   { code: "Thailand", name: "Thailand" },
-  { code: "The Gambia", name: "The Gambia" },
+  { code: "Gambia", name: "Gambia" },
   { code: "Timor-Leste", name: "Timor-Leste" },
   { code: "Togo", name: "Togo" },
   { code: "Tonga", name: "Tonga" },
@@ -222,16 +222,16 @@ const AVAILABLE_NATIONS = [
 
 // Position groups with their internal IDs (as used by Roster Maker)
 const POSITION_GROUPS = [
-  { label: "Goalkeeper (GK)",   positions: ["GK"], weightKey: "gk" },
-  { label: "Defender (CB/LB/RB)", positions: ["CB","LB","RB"], weightKey: "def" },
-  { label: "Midfielder (CDM/CM/CAM)", positions: ["CDM","CM","CAM"], weightKey: "mid" },
-  { label: "Winger (LW/RW)",     positions: ["LW","RW"], weightKey: "wing" },
-  { label: "Striker (ST/CF)",    positions: ["ST","CF"], weightKey: "att" },
+  { label: "Goalkeeper (GK)", positions: ["GK"], weightKey: "gk" },
+  { label: "Defender (CB/LB/RB)", positions: ["CB", "LB", "RB"], weightKey: "def" },
+  { label: "Midfielder (CDM/CM/CAM)", positions: ["CDM", "CM", "CAM"], weightKey: "mid" },
+  { label: "Winger (LW/RW)", positions: ["LW", "RW"], weightKey: "wing" },
+  { label: "Striker (ST/CF)", positions: ["ST", "CF"], weightKey: "att" },
 ];
 
 // Helper: weighted random selection
 const weightedRandom = (options, weights) => {
-  const total = weights.reduce((a,b) => a+b, 0);
+  const total = weights.reduce((a, b) => a + b, 0);
   let r = Math.random() * total;
   let acc = 0;
   for (let i = 0; i < options.length; i++) {
@@ -256,15 +256,15 @@ const generatePlayerRow = (
 ) => {
   // 1. Overall rating
   const ovr = rand(ovrMin, ovrMax);
-  
+
   // 2. Age and birthdate
   const age = rand(ageMin, ageMax);
   const currentYear = 2026;
   const birthYear = currentYear - age;
   const birthMonth = rand(1, 12);
   const birthDay = rand(1, 28);
-  const birthdate = `${birthYear}-${String(birthMonth).padStart(2,'0')}-${String(birthDay).padStart(2,'0')}`;
-  
+  const birthdate = `${birthYear}-${String(birthMonth).padStart(2, '0')}-${String(birthDay).padStart(2, '0')}`;
+
   // 3. Position selection based on weights
   const positionPool = [];
   const weightValues = [];
@@ -275,7 +275,7 @@ const generatePlayerRow = (
     }
   }
   const primaryPos = weightedRandom(positionPool, weightValues);
-  
+
   // 4. Secondary positions (optional)
   let secondaryPos = null;
   if (Math.random() < 0.4) {
@@ -289,12 +289,12 @@ const generatePlayerRow = (
     const remaining = positionPool.filter(p => p !== primaryPos && p !== secondaryPos);
     if (remaining.length) tertiaryPos = remaining[Math.floor(Math.random() * remaining.length)];
   }
-  
+
   // 5. Foot and weak foot
   const foot = Math.random() < footBias ? "Right" : "Left";
   const weakFootValue = rand(1, 5);
-  const weakFootText = ["Terrible","Bad","Average","Good","Excellent"][weakFootValue - 1];
-  
+  const weakFootText = ["Terrible", "Bad", "Average", "Good", "Excellent"][weakFootValue - 1];
+
   // 6. Height and weight (realistic ranges)
   let height = 180;
   let weight = 75;
@@ -311,51 +311,51 @@ const generatePlayerRow = (
     height = rand(168, 185);
     weight = rand(65, 80);
   }
-  
+
   // 7. First and last name from predefined lists (we'll use placeholder names)
-  let firstName = `Player_${rand(1000,9999)}`;
+  let firstName = `Player_${rand(1000, 9999)}`;
   let lastName = `Nation_${nation.replace(/[^a-z]/gi, '')}`;
 
   if (namesData && namesData[nation]) {
     const fnList = namesData[nation].first_names;
     const lnList = namesData[nation].last_names;
-    
+
     if (fnList && fnList.length > 0) {
       firstName = fnList[rand(0, fnList.length - 1)];
       // 15% chance to have a double/compound first name
       if (Math.random() < 0.15 && fnList.length > 1) {
         let secondFirst = fnList[rand(0, fnList.length - 1)];
         let attempts = 0;
-        while(secondFirst === firstName && attempts < 5) {
-            secondFirst = fnList[rand(0, fnList.length - 1)];
-            attempts++;
+        while (secondFirst === firstName && attempts < 5) {
+          secondFirst = fnList[rand(0, fnList.length - 1)];
+          attempts++;
         }
         if (secondFirst !== firstName) {
-            const separator = Math.random() < 0.3 ? '-' : ' ';
-            firstName = `${firstName}${separator}${secondFirst}`;
+          const separator = Math.random() < 0.3 ? '-' : ' ';
+          firstName = `${firstName}${separator}${secondFirst}`;
         }
       }
     }
-    
+
     if (lnList && lnList.length > 0) {
       lastName = lnList[rand(0, lnList.length - 1)];
       // 30% chance to have a double/compound last name
       if (Math.random() < 0.30 && lnList.length > 1) {
         let secondLast = lnList[rand(0, lnList.length - 1)];
         let attempts = 0;
-        while(secondLast === lastName && attempts < 5) {
-            secondLast = lnList[rand(0, lnList.length - 1)];
-            attempts++;
+        while (secondLast === lastName && attempts < 5) {
+          secondLast = lnList[rand(0, lnList.length - 1)];
+          attempts++;
         }
         if (secondLast !== lastName) {
-            // Some cultures use hyphens, some use spaces
-            const separator = Math.random() < 0.25 ? '-' : ' ';
-            lastName = `${lastName}${separator}${secondLast}`;
+          // Some cultures use hyphens, some use spaces
+          const separator = Math.random() < 0.25 ? '-' : ' ';
+          lastName = `${lastName}${separator}${secondLast}`;
         }
       }
     }
   }
-  
+
   return {
     given: firstName,
     sur: lastName,
@@ -397,7 +397,7 @@ const generateTemplateData = (
 export default function MultiNationGenerator() {
   const [namesData, setNamesData] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   useEffect(() => {
     fetch('/data/nations.json')
       .then(res => res.json())
@@ -411,7 +411,7 @@ export default function MultiNationGenerator() {
   const [nationCounts, setNationCounts] = useState(
     AVAILABLE_NATIONS.map(n => ({ nation: n.code, count: 0 }))
   );
-  
+
   // Global settings
   const [ovrMin, setOvrMin] = useState(60);
   const [ovrMax, setOvrMax] = useState(85);
@@ -430,16 +430,16 @@ export default function MultiNationGenerator() {
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [logs, setLogs] = useState(["• Ready. Select nations, adjust settings, then generate."]);
-  
+
   const logUpdate = (msg) => setLogs(prev => [`• ${msg}`, ...prev]);
-  
+
   // Total number of players (sum of counts)
   const totalPlayers = useMemo(() => nationCounts.reduce((sum, nc) => sum + nc.count, 0), [nationCounts]);
-  
+
   const updateNationCountByName = (nationCode, count) => {
     setNationCounts(prev => prev.map(nc => nc.nation === nationCode ? { ...nc, count: Math.max(0, count) } : nc));
   };
-  
+
   // Reset all counts to zero
   const clearAll = () => {
     setNationCounts(nationCounts.map(nc => ({ ...nc, count: 0 })));
@@ -448,36 +448,36 @@ export default function MultiNationGenerator() {
 
   const addOneToVisible = () => {
     const visibleCodes = new Set(filteredNations.map(n => n.code));
-    setNationCounts(prev => prev.map(nc => 
+    setNationCounts(prev => prev.map(nc =>
       visibleCodes.has(nc.nation) ? { ...nc, count: nc.count + 1 } : nc
     ));
     logUpdate(`Added 1 player to ${visibleCodes.size} filtered nations.`);
   };
-  
+
   // Update position weight
   const updateWeight = (key, value) => {
     const newWeights = { ...positionWeights, [key]: value };
     // Normalize to sum 1
-    const sum = Object.values(newWeights).reduce((a,b) => a+b, 0);
+    const sum = Object.values(newWeights).reduce((a, b) => a + b, 0);
     if (Math.abs(sum - 1) > 0.001) {
       const factor = 1 / sum;
       for (let k in newWeights) newWeights[k] = newWeights[k] * factor;
     }
     setPositionWeights(newWeights);
   };
-  
+
   const generatePlayers = async () => {
     if (totalPlayers === 0) {
       logUpdate("❌ Please select at least one player to generate.");
       return;
     }
-    
+
     setIsGenerating(true);
     logUpdate(`Generating ${totalPlayers} players...`);
     logUpdate(`OVR range: ${ovrMin}-${ovrMax}, Age: ${ageMin}-${ageMax}`);
     if (optimisticMode) logUpdate(`Optimistic mode ON (boost +${boostAmount} OVR)`);
     if (makeWomen) logUpdate(`Female targets enabled`);
-    
+
     try {
       // Build template data from selected nations and counts
       const nationCountsArray = nationCounts.filter(nc => nc.count > 0).map(nc => ({ nation: nc.nation, count: nc.count }));
@@ -490,7 +490,7 @@ export default function MultiNationGenerator() {
         makeWomen,
         namesData
       );
-      
+
       // Call makeplayers with settings
       const settings = {
         useDefaultPlayers: true,
@@ -499,9 +499,9 @@ export default function MultiNationGenerator() {
         optimisticMode: optimisticMode,
         boostAmount: boostAmount
       };
-      
+
       const generatedPlayers = makeplayers(templateData, settings);
-      
+
       // Import the output formatters from smtools.js (they are also exported)
       const { playerstableobjtostring26Bytes, editedplayernamesobjtostring26Bytes } = await import('../utils/rm26/smtools.js');
       const bytes1 = playerstableobjtostring26Bytes(generatedPlayers);
@@ -514,7 +514,7 @@ export default function MultiNationGenerator() {
       a1.click();
       document.body.removeChild(a1);
       URL.revokeObjectURL(url1);
-      
+
       const bytes2 = editedplayernamesobjtostring26Bytes(generatedPlayers);
       const blob2 = new Blob([bytes2], { type: 'application/octet-stream' });
       const url2 = URL.createObjectURL(blob2);
@@ -525,7 +525,7 @@ export default function MultiNationGenerator() {
       a2.click();
       document.body.removeChild(a2);
       URL.revokeObjectURL(url2);
-      
+
       logUpdate(`✅ Generated ${totalPlayers} players successfully.`);
     } catch (error) {
       logUpdate(`❌ Generation failed: ${error.message}`);
@@ -544,18 +544,18 @@ export default function MultiNationGenerator() {
     const nc = nationCounts.find(n => n.nation === code);
     return nc ? nc.count : 0;
   };
-  
+
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
         <h1 style={{ fontSize: '3rem', fontWeight: '800', marginBottom: '0.5rem', background: 'linear-gradient(to right, #4facfe 0%, #00f2fe 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Multi‑Nation Generator</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Generate realistic players from over 200 nations with dynamically fetched native names.</p>
       </div>
-      
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '2rem', alignItems: 'start' }}>
         {/* Left panel: Nation Grid */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
+
           {/* Search and Bulk Actions */}
           <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: '1rem', zIndex: 10 }}>
             <div style={{ flex: 1, minWidth: '250px' }}>
@@ -584,7 +584,7 @@ export default function MultiNationGenerator() {
               {filteredNations.map((nation) => {
                 const count = getCountForNation(nation.code);
                 const isActive = count > 0;
-                
+
                 return (
                   <motion.div
                     layout
@@ -610,9 +610,9 @@ export default function MultiNationGenerator() {
                       </div>
                       <span style={{ fontWeight: '600', fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={nation.name}>{nation.name}</span>
                     </div>
-                    
+
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '0.25rem' }}>
-                      <button 
+                      <button
                         onClick={() => updateNationCountByName(nation.code, count - 1)}
                         style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       >
@@ -626,7 +626,7 @@ export default function MultiNationGenerator() {
                         onChange={(e) => updateNationCountByName(nation.code, parseInt(e.target.value) || 0)}
                         style={{ width: '50px', textAlign: 'center', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.1rem', fontWeight: 'bold', outline: 'none' }}
                       />
-                      <button 
+                      <button
                         onClick={() => updateNationCountByName(nation.code, count + 1)}
                         style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'rgba(var(--accent-color-rgb), 0.3)', border: '1px solid var(--accent-color)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       >
@@ -644,15 +644,15 @@ export default function MultiNationGenerator() {
             )}
           </div>
         </div>
-        
+
         {/* Right panel: Settings & Generate (Sticky) */}
         <div style={{ position: 'sticky', top: '1rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
+
           <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <h3 style={{ fontSize: '1.2rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem' }}>
               <Sliders size={20} /> Settings
             </h3>
-            
+
             {/* OVR Range */}
             <div>
               <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>OVR Range ({ovrMin} - {ovrMax})</label>
@@ -663,7 +663,7 @@ export default function MultiNationGenerator() {
                 <input type="range" min="30" max="99" value={ovrMax} onChange={(e) => setOvrMax(parseInt(e.target.value))} style={{ flex: 1 }} />
               </div>
             </div>
-            
+
             {/* Age Range */}
             <div>
               <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>Age Range ({ageMin} - {ageMax})</label>
@@ -674,7 +674,7 @@ export default function MultiNationGenerator() {
                 <input type="range" min="15" max="45" value={ageMax} onChange={(e) => setAgeMax(parseInt(e.target.value))} style={{ flex: 1 }} />
               </div>
             </div>
-            
+
             {/* Position Distribution */}
             <div>
               <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>Position Weights</label>
@@ -695,13 +695,13 @@ export default function MultiNationGenerator() {
                 ))}
               </div>
             </div>
-            
+
             {/* Foot Bias */}
             <div>
               <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>Right‑foot bias ({(footBias * 100).toFixed(0)}%)</label>
               <input type="range" min="0.5" max="1" step="0.01" value={footBias} onChange={(e) => setFootBias(parseFloat(e.target.value))} style={{ width: '100%' }} />
             </div>
-            
+
             {/* Checkboxes */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
               <label className="checkbox-group" style={{ cursor: 'pointer', padding: '0.5rem', background: 'rgba(0,0,0,0.1)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -713,10 +713,10 @@ export default function MultiNationGenerator() {
                 <span style={{ marginLeft: '8px' }}>Optimistic Potential</span>
               </label>
             </div>
-            
+
             <AnimatePresence>
               {optimisticMode && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
@@ -733,7 +733,7 @@ export default function MultiNationGenerator() {
                 <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>Total Players:</span>
                 <span style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--accent-color)' }}>{totalPlayers}</span>
               </div>
-              
+
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}

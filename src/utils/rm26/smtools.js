@@ -26,23 +26,15 @@ export function fixMojibake(str) {
   } catch(e) { return str; }
 }
 
-// Encode a JS string as Windows-1252 bytes for output files.
-// FC26 roster/compdata .txt files are read by the game as Windows-1252.
-export function encodeWindows1252(str) {
-  const bytes = new Uint8Array(str.length * 2); // worst case
-  let len = 0;
-  for (let i = 0; i < str.length; i++) {
-    const code = str.charCodeAt(i);
-    if (code < 0x80) {
-      bytes[len++] = code; // ASCII: identical in W-1252
-    } else if (code >= 0xA0 && code <= 0xFF) {
-      bytes[len++] = code; // Latin-1 supplement: identical code points in W-1252
-    } else {
-      // Characters outside W-1252 range: replace with '?'
-      bytes[len++] = 0x3F;
-    }
-  }
-  return bytes.slice(0, len);
+// Encode a JS string to UTF-8 with BOM so Excel and modern game tools read special characters correctly.
+export function encodeUTF8WithBOM(str) {
+  const utf8Bytes = new TextEncoder().encode(str);
+  const bytesWithBOM = new Uint8Array(utf8Bytes.length + 3);
+  bytesWithBOM[0] = 0xEF;
+  bytesWithBOM[1] = 0xBB;
+  bytesWithBOM[2] = 0xBF;
+  bytesWithBOM.set(utf8Bytes, 3);
+  return bytesWithBOM;
 }
 
 // ── Case-insensitive field getter (no Unicode changes) ─────────────────
@@ -264,9 +256,9 @@ export function playerstableobjtostring26(obj){
     return allrows.join('\n');
 }
 
-// Returns a Windows-1252 Uint8Array suitable for Blob output
+// Returns a UTF-8 Uint8Array with BOM suitable for Blob output
 export function playerstableobjtostring26Bytes(obj) {
-  return encodeWindows1252(playerstableobjtostring26(obj));
+  return encodeUTF8WithBOM(playerstableobjtostring26(obj));
 }
 
 export function editedplayernamesobjtostring26(obj) {
@@ -284,9 +276,9 @@ export function editedplayernamesobjtostring26(obj) {
     return allRows.join('\n');
 }
 
-// Returns a Windows-1252 Uint8Array suitable for Blob output
+// Returns a UTF-8 Uint8Array with BOM suitable for Blob output
 export function editedplayernamesobjtostring26Bytes(obj) {
-  return encodeWindows1252(editedplayernamesobjtostring26(obj));
+  return encodeUTF8WithBOM(editedplayernamesobjtostring26(obj));
 }
 
 export function findnameid(name) {
