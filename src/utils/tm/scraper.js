@@ -13,6 +13,12 @@ export async function runScraper(
   teamFilter = ""
 ) {
   let isRunning = true;
+
+  const fixMojibake = (str) => {
+    if (typeof str !== 'string' || !str.includes('Ã')) return str;
+    try { return decodeURIComponent(escape(str)); } catch(e) { return str; }
+  };
+
   const state = {
     teams: [],
     players: [],
@@ -426,7 +432,8 @@ export async function runScraper(
           const a = trs[0].querySelector('td.hauptlink a');
           if (a) {
             p.ProfileUrl = a.getAttribute('href');
-            const fullName = a.textContent.trim().replace(/\s+/g, ' ');
+            let fullName = a.textContent.trim().replace(/\s+/g, ' ');
+            fullName = fixMojibake(fullName);
             p.FullName = fullName;
             const defaultCombo = getNameCombinations(fullName)[0];
             p.Firstname = defaultCombo.firstName;

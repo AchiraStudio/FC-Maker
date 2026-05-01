@@ -1,5 +1,5 @@
 // src/pages/MultiNationGenerator.jsx
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, Loader2, Flag, Users, Sliders, CheckSquare, Square } from 'lucide-react';
 import { makeplayers } from '../utils/rm26/smtools.js';
@@ -251,7 +251,8 @@ const generatePlayerRow = (
   ageMin, ageMax,
   positionWeights, // object with keys: gk, def, mid, wing, att
   footBias = 0.8, // probability of right foot
-  female = false
+  female = false,
+  namesData = null
 ) => {
   // 1. Overall rating
   const ovr = rand(ovrMin, ovrMax);
@@ -312,9 +313,48 @@ const generatePlayerRow = (
   }
   
   // 7. First and last name from predefined lists (we'll use placeholder names)
-  // To keep it simple, we'll use generic names; users can edit later.
-  const firstName = `Player_${rand(1000,9999)}`;
-  const lastName = `Nation_${nation.replace(/[^a-z]/gi, '')}`;
+  let firstName = `Player_${rand(1000,9999)}`;
+  let lastName = `Nation_${nation.replace(/[^a-z]/gi, '')}`;
+
+  if (namesData && namesData[nation]) {
+    const fnList = namesData[nation].first_names;
+    const lnList = namesData[nation].last_names;
+    
+    if (fnList && fnList.length > 0) {
+      firstName = fnList[rand(0, fnList.length - 1)];
+      // 15% chance to have a double/compound first name
+      if (Math.random() < 0.15 && fnList.length > 1) {
+        let secondFirst = fnList[rand(0, fnList.length - 1)];
+        let attempts = 0;
+        while(secondFirst === firstName && attempts < 5) {
+            secondFirst = fnList[rand(0, fnList.length - 1)];
+            attempts++;
+        }
+        if (secondFirst !== firstName) {
+            const separator = Math.random() < 0.3 ? '-' : ' ';
+            firstName = `${firstName}${separator}${secondFirst}`;
+        }
+      }
+    }
+    
+    if (lnList && lnList.length > 0) {
+      lastName = lnList[rand(0, lnList.length - 1)];
+      // 30% chance to have a double/compound last name
+      if (Math.random() < 0.30 && lnList.length > 1) {
+        let secondLast = lnList[rand(0, lnList.length - 1)];
+        let attempts = 0;
+        while(secondLast === lastName && attempts < 5) {
+            secondLast = lnList[rand(0, lnList.length - 1)];
+            attempts++;
+        }
+        if (secondLast !== lastName) {
+            // Some cultures use hyphens, some use spaces
+            const separator = Math.random() < 0.25 ? '-' : ' ';
+            lastName = `${lastName}${separator}${secondLast}`;
+        }
+      }
+    }
+  }
   
   return {
     given: firstName,
@@ -342,18 +382,31 @@ const generateTemplateData = (
   ageMin, ageMax,
   positionWeights,
   footBias,
-  female
+  female,
+  namesData
 ) => {
   const rows = [];
   for (const { nation, count } of nationCounts) {
     for (let i = 0; i < count; i++) {
-      rows.push(generatePlayerRow(nation, ovrMin, ovrMax, ageMin, ageMax, positionWeights, footBias, female));
+      rows.push(generatePlayerRow(nation, ovrMin, ovrMax, ageMin, ageMax, positionWeights, footBias, female, namesData));
     }
   }
   return rows;
 };
 
 export default function MultiNationGenerator() {
+  const [namesData, setNamesData] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  useEffect(() => {
+    fetch('/data/nations.json')
+      .then(res => res.json())
+      .then(data => {
+        setNamesData(data);
+      })
+      .catch(err => console.error("Failed to load nations data:", err));
+  }, []);
+
   // Selected nations and counts
   const [nationCounts, setNationCounts] = useState(
     AVAILABLE_NATIONS.map(n => ({ nation: n.code, count: 0 }))
@@ -376,30 +429,29 @@ export default function MultiNationGenerator() {
     att: 0.15,
   });
   const [isGenerating, setIsGenerating] = useState(false);
-  const [logs, setLogs] = useState(["• Ready. Select nations, set counts, adjust settings, then generate."]);
+  const [logs, setLogs] = useState(["• Ready. Select nations, adjust settings, then generate."]);
   
   const logUpdate = (msg) => setLogs(prev => [`• ${msg}`, ...prev]);
   
   // Total number of players (sum of counts)
   const totalPlayers = useMemo(() => nationCounts.reduce((sum, nc) => sum + nc.count, 0), [nationCounts]);
   
-  // Update a nation's count
-  const updateNationCount = (index, count) => {
-    const newCounts = [...nationCounts];
-    newCounts[index].count = Math.max(0, count);
-    setNationCounts(newCounts);
-  };
-  
-  // Select all nations with a default count (e.g., 5 each)
-  const selectAll = (count = 10) => {
-    setNationCounts(nationCounts.map(nc => ({ ...nc, count })));
-    logUpdate(`Set all nations to ${count} players each.`);
+  const updateNationCountByName = (nationCode, count) => {
+    setNationCounts(prev => prev.map(nc => nc.nation === nationCode ? { ...nc, count: Math.max(0, count) } : nc));
   };
   
   // Reset all counts to zero
-  const resetCounts = () => {
+  const clearAll = () => {
     setNationCounts(nationCounts.map(nc => ({ ...nc, count: 0 })));
     logUpdate("Cleared all nation counts.");
+  };
+
+  const addOneToVisible = () => {
+    const visibleCodes = new Set(filteredNations.map(n => n.code));
+    setNationCounts(prev => prev.map(nc => 
+      visibleCodes.has(nc.nation) ? { ...nc, count: nc.count + 1 } : nc
+    ));
+    logUpdate(`Added 1 player to ${visibleCodes.size} filtered nations.`);
   };
   
   // Update position weight
@@ -435,7 +487,8 @@ export default function MultiNationGenerator() {
         ageMin, ageMax,
         positionWeights,
         footBias,
-        makeWomen
+        makeWomen,
+        namesData
       );
       
       // Call makeplayers with settings
@@ -480,158 +533,235 @@ export default function MultiNationGenerator() {
       setIsGenerating(false);
     }
   };
+
+  const filteredNations = useMemo(() => {
+    if (!searchQuery) return AVAILABLE_NATIONS;
+    const lowerQ = searchQuery.toLowerCase();
+    return AVAILABLE_NATIONS.filter(n => n.name.toLowerCase().includes(lowerQ) || n.code.toLowerCase().includes(lowerQ));
+  }, [searchQuery]);
+
+  const getCountForNation = (code) => {
+    const nc = nationCounts.find(n => n.nation === code);
+    return nc ? nc.count : 0;
+  };
   
   return (
-    <div style={{ maxWidth: '1100px', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      <div>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: '300', marginBottom: '0.25rem' }}>Multi‑Nation Generator</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Generate players from multiple nations with full control over OVR, age, position distribution, and more.</p>
+    <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+        <h1 style={{ fontSize: '3rem', fontWeight: '800', marginBottom: '0.5rem', background: 'linear-gradient(to right, #4facfe 0%, #00f2fe 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Multi‑Nation Generator</h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Generate realistic players from over 200 nations with dynamically fetched native names.</p>
       </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-        {/* Left panel: Nation selection */}
-        <div className="glass-panel" style={{ padding: '1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Flag size={18} /> Nations
-            </h3>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button onClick={() => selectAll(10)} className="btn-primary" style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}>Select All (10)</button>
-              <button onClick={resetCounts} style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem', background: 'rgba(255,100,100,0.2)', border: '1px solid #ff6464', borderRadius: '6px', color: '#ff6464', cursor: 'pointer' }}>Clear</button>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '2rem', alignItems: 'start' }}>
+        {/* Left panel: Nation Grid */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          
+          {/* Search and Bulk Actions */}
+          <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: '1rem', zIndex: 10 }}>
+            <div style={{ flex: 1, minWidth: '250px' }}>
+              <input
+                type="text"
+                placeholder="Search nations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '1rem', outline: 'none' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button onClick={addOneToVisible} className="btn-primary" style={{ padding: '0.6rem 1rem' }}>
+                <Users size={16} style={{ marginRight: '6px', display: 'inline-block' }} />
+                +1 to Visible
+              </button>
+              <button onClick={clearAll} style={{ padding: '0.6rem 1rem', background: 'rgba(255,100,100,0.15)', border: '1px solid rgba(255,100,100,0.4)', borderRadius: '8px', color: '#ff6464', cursor: 'pointer', fontWeight: '600' }}>
+                Clear All
+              </button>
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {nationCounts.map((nc, idx) => (
-              <div key={nc.nation} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <span style={{ width: '100px', fontSize: '0.9rem' }}>{nc.nation}</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="200"
-                  value={nc.count}
-                  onChange={(e) => updateNationCount(idx, parseInt(e.target.value) || 0)}
-                  style={{ width: '80px', ...inputStyle }}
-                />
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>players</span>
+
+          {/* Grid of Nations */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
+            <AnimatePresence>
+              {filteredNations.map((nation) => {
+                const count = getCountForNation(nation.code);
+                const isActive = count > 0;
+                
+                return (
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.2 }}
+                    key={nation.code}
+                    className="glass-panel"
+                    style={{
+                      padding: '1.25rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '1rem',
+                      border: isActive ? '1px solid var(--accent-color)' : '1px solid rgba(255,255,255,0.05)',
+                      background: isActive ? 'rgba(var(--accent-color-rgb), 0.1)' : 'rgba(0,0,0,0.2)',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>
+                        {nation.name.charAt(0)}
+                      </div>
+                      <span style={{ fontWeight: '600', fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={nation.name}>{nation.name}</span>
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '0.25rem' }}>
+                      <button 
+                        onClick={() => updateNationCountByName(nation.code, count - 1)}
+                        style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        min="0"
+                        max="200"
+                        value={count}
+                        onChange={(e) => updateNationCountByName(nation.code, parseInt(e.target.value) || 0)}
+                        style={{ width: '50px', textAlign: 'center', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.1rem', fontWeight: 'bold', outline: 'none' }}
+                      />
+                      <button 
+                        onClick={() => updateNationCountByName(nation.code, count + 1)}
+                        style={{ width: '32px', height: '32px', borderRadius: '6px', background: 'rgba(var(--accent-color-rgb), 0.3)', border: '1px solid var(--accent-color)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+            {filteredNations.length === 0 && (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: 'rgba(255,255,255,0.5)' }}>
+                No nations found matching "{searchQuery}"
               </div>
-            ))}
-          </div>
-          <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--glass-border)', textAlign: 'center', color: 'var(--accent-color)', fontWeight: 'bold' }}>
-            Total: {totalPlayers} players
+            )}
           </div>
         </div>
         
-        {/* Right panel: Settings */}
-        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sliders size={18} /> Player Attributes
-          </h3>
+        {/* Right panel: Settings & Generate (Sticky) */}
+        <div style={{ position: 'sticky', top: '1rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           
-          {/* OVR Range */}
-          <div>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>OVR Range</label>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <input type="range" min="30" max="99" value={ovrMin} onChange={(e) => setOvrMin(parseInt(e.target.value))} style={{ flex: 1 }} />
-              <span style={{ minWidth: '60px' }}>{ovrMin} - {ovrMax}</span>
+          <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem' }}>
+              <Sliders size={20} /> Settings
+            </h3>
+            
+            {/* OVR Range */}
+            <div>
+              <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>OVR Range ({ovrMin} - {ovrMax})</label>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <input type="range" min="30" max="99" value={ovrMin} onChange={(e) => setOvrMin(parseInt(e.target.value))} style={{ flex: 1 }} />
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '8px' }}>
+                <input type="range" min="30" max="99" value={ovrMax} onChange={(e) => setOvrMax(parseInt(e.target.value))} style={{ flex: 1 }} />
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '4px' }}>
-              <input type="range" min="30" max="99" value={ovrMax} onChange={(e) => setOvrMax(parseInt(e.target.value))} style={{ flex: 1 }} />
+            
+            {/* Age Range */}
+            <div>
+              <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>Age Range ({ageMin} - {ageMax})</label>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <input type="range" min="15" max="40" value={ageMin} onChange={(e) => setAgeMin(parseInt(e.target.value))} style={{ flex: 1 }} />
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '8px' }}>
+                <input type="range" min="15" max="45" value={ageMax} onChange={(e) => setAgeMax(parseInt(e.target.value))} style={{ flex: 1 }} />
+              </div>
+            </div>
+            
+            {/* Position Distribution */}
+            <div>
+              <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>Position Weights</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.75rem', alignItems: 'center' }}>
+                {POSITION_GROUPS.map(group => (
+                  <React.Fragment key={group.weightKey}>
+                    <span style={{ fontSize: '0.85rem' }}>{group.label}</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={positionWeights[group.weightKey]}
+                      onChange={(e) => updateWeight(group.weightKey, parseFloat(e.target.value))}
+                      style={{ width: '120px' }}
+                    />
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+            
+            {/* Foot Bias */}
+            <div>
+              <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>Right‑foot bias ({(footBias * 100).toFixed(0)}%)</label>
+              <input type="range" min="0.5" max="1" step="0.01" value={footBias} onChange={(e) => setFootBias(parseFloat(e.target.value))} style={{ width: '100%' }} />
+            </div>
+            
+            {/* Checkboxes */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <label className="checkbox-group" style={{ cursor: 'pointer', padding: '0.5rem', background: 'rgba(0,0,0,0.1)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <input type="checkbox" checked={makeWomen} onChange={() => setMakeWomen(!makeWomen)} />
+                <span style={{ marginLeft: '8px' }}>Female Players</span>
+              </label>
+              <label className="checkbox-group" style={{ cursor: 'pointer', padding: '0.5rem', background: 'rgba(0,0,0,0.1)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <input type="checkbox" checked={optimisticMode} onChange={() => setOptimisticMode(!optimisticMode)} />
+                <span style={{ marginLeft: '8px' }}>Optimistic Potential</span>
+              </label>
+            </div>
+            
+            <AnimatePresence>
+              {optimisticMode && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid rgba(var(--accent-color-rgb), 0.3)' }}
+                >
+                  <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--accent-color)' }}>Boost: +{boostAmount}</span>
+                  <input type="range" min="1" max="15" value={boostAmount} onChange={(e) => setBoostAmount(parseInt(e.target.value))} style={{ flex: 1 }} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div style={{ marginTop: '1rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <span style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>Total Players:</span>
+                <span style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--accent-color)' }}>{totalPlayers}</span>
+              </div>
+              
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="btn-primary"
+                disabled={isGenerating || totalPlayers === 0}
+                onClick={generatePlayers}
+                style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', boxShadow: '0 4px 15px rgba(var(--accent-color-rgb), 0.4)' }}
+              >
+                {isGenerating ? <Loader2 size={24} className="animate-spin" /> : <Download size={24} />}
+                {isGenerating ? `Generating...` : `Download (${totalPlayers})`}
+              </motion.button>
             </div>
           </div>
-          
-          {/* Age Range */}
-          <div>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Age Range</label>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <input type="range" min="15" max="40" value={ageMin} onChange={(e) => setAgeMin(parseInt(e.target.value))} style={{ flex: 1 }} />
-              <span style={{ minWidth: '60px' }}>{ageMin} - {ageMax}</span>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '4px' }}>
-              <input type="range" min="15" max="45" value={ageMax} onChange={(e) => setAgeMax(parseInt(e.target.value))} style={{ flex: 1 }} />
-            </div>
-          </div>
-          
-          {/* Position Distribution */}
-          <div>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Position Distribution (weights)</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.5rem', alignItems: 'center' }}>
-              {POSITION_GROUPS.map(group => (
-                <React.Fragment key={group.weightKey}>
-                  <span style={{ fontSize: '0.8rem' }}>{group.label}</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={positionWeights[group.weightKey]}
-                    onChange={(e) => updateWeight(group.weightKey, parseFloat(e.target.value))}
-                    style={{ width: '150px' }}
-                  />
-                </React.Fragment>
+
+          {/* Logs */}
+          <div className="glass-panel" style={{ padding: '1.25rem', background: 'rgba(10,12,16,0.8)' }}>
+            <h4 style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Activity Log</h4>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", color: '#a0a5b5', fontSize: '0.8rem', height: '120px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {logs.map((log, i) => (
+                <div key={i} style={{ color: log.includes('✅') ? '#4ade80' : log.includes('❌') ? '#f87171' : 'inherit' }}>
+                  {log}
+                </div>
               ))}
             </div>
           </div>
-          
-          {/* Foot Bias */}
-          <div>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Right‑foot bias</label>
-            <input type="range" min="0.5" max="1" step="0.01" value={footBias} onChange={(e) => setFootBias(parseFloat(e.target.value))} style={{ width: '100%' }} />
-          </div>
-          
-          {/* Checkboxes */}
-          <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-            <label className="checkbox-group">
-              <input type="checkbox" checked={makeWomen} onChange={() => setMakeWomen(!makeWomen)} />
-              Female Players
-            </label>
-            <label className="checkbox-group">
-              <input type="checkbox" checked={optimisticMode} onChange={() => setOptimisticMode(!optimisticMode)} />
-              Optimistic Potential (+{boostAmount} OVR)
-            </label>
-          </div>
-          
-          {optimisticMode && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem 1rem', borderRadius: '8px' }}>
-              <span style={{ fontSize: '0.8rem' }}>Boost: +</span>
-              <input type="range" min="1" max="15" value={boostAmount} onChange={(e) => setBoostAmount(parseInt(e.target.value))} style={{ flex: 1 }} />
-              <span>{boostAmount}</span>
-            </div>
-          )}
-          
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
-            className="btn-primary"
-            disabled={isGenerating || totalPlayers === 0}
-            onClick={generatePlayers}
-            style={{ width: '100%', marginTop: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
-          >
-            {isGenerating ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
-            {isGenerating ? `Generating ${totalPlayers} players...` : `Generate ${totalPlayers} Players`}
-          </motion.button>
-        </div>
-      </div>
-      
-      {/* Logs */}
-      <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(0,0,0,0.8)' }}>
-        <div style={{ fontFamily: 'monospace', color: '#8a8d98', fontSize: '0.85rem', height: '150px', overflowY: 'auto' }}>
-          {logs.map((log, i) => (
-            <div key={i} style={{ marginBottom: '0.5rem', color: log.includes('✅') ? 'var(--accent-color)' : log.includes('❌') ? '#ff6464' : 'inherit' }}>
-              {log}
-            </div>
-          ))}
+
         </div>
       </div>
     </div>
   );
 }
-
-const inputStyle = {
-  padding: '0.5rem 0.75rem',
-  background: 'rgba(0,0,0,0.2)',
-  border: '1px solid var(--glass-border)',
-  borderRadius: '6px',
-  color: '#fff',
-  fontFamily: "'Poppins', sans-serif",
-  fontSize: '0.85rem'
-};

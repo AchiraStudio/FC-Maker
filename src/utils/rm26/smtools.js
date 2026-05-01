@@ -7,6 +7,11 @@ import { nations } from './resources.js';
 
 export let burnedplayerids = [];
 
+export function fixMojibake(str) {
+  if (typeof str !== 'string' || !str.includes('Ã')) return str;
+  try { return decodeURIComponent(escape(str)); } catch(e) { return str; }
+}
+
 // ── Case-insensitive field getter (no Unicode changes) ─────────────────
 function getFieldCI(obj, name) {
     const key = Object.keys(obj).find(k => k.toLowerCase() === name.toLowerCase());
@@ -390,11 +395,11 @@ export function parsetemplateplayer(player){
     const rawWF = getFieldCI(player, 'weakfoot') || getFieldCI(player, 'weak_foot');
     player.weakfoot = rawWF ? String(rawWF).trim() : 'Bad';
 
-    // Name fields – preserve exactly as given
-    player.given  = getFieldCI(player, 'given')  || getFieldCI(player, 'firstname')  || '';
-    player.sur    = getFieldCI(player, 'sur')    || getFieldCI(player, 'surname')    || getFieldCI(player, 'lastname') || '';
-    player.jersey = getFieldCI(player, 'jersey') || getFieldCI(player, 'jerseyname') || '';
-    player.nick   = getFieldCI(player, 'nick')   || getFieldCI(player, 'commonname') || '';
+    // Name fields – preserve exactly as given but fix Mojibake (e.g. 'MoÃ¯se' -> 'Moïse')
+    player.given  = fixMojibake(getFieldCI(player, 'given')  || getFieldCI(player, 'firstname')  || '');
+    player.sur    = fixMojibake(getFieldCI(player, 'sur')    || getFieldCI(player, 'surname')    || getFieldCI(player, 'lastname') || '');
+    player.jersey = fixMojibake(getFieldCI(player, 'jersey') || getFieldCI(player, 'jerseyname') || '');
+    player.nick   = fixMojibake(getFieldCI(player, 'nick')   || getFieldCI(player, 'commonname') || '');
 
     // Positions – map from string to ID (string may contain UTF‑8)
     const normalizePos = (p) => {
