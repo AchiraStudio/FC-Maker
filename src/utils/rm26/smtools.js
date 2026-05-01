@@ -8,8 +8,41 @@ import { nations } from './resources.js';
 export let burnedplayerids = [];
 
 export function fixMojibake(str) {
-  if (typeof str !== 'string' || !str.includes('Ã')) return str;
-  try { return decodeURIComponent(escape(str)); } catch(e) { return str; }
+  if (typeof str !== 'string') return str;
+  // If the string contains Mojibake patterns (UTF-8 bytes mis-read as Latin-1),
+  // recover by treating each char as a byte and re-decoding as UTF-8.
+  try {
+    // Build a byte array from the char codes (works when chars are Latin-1 range)
+    const bytes = new Uint8Array(str.length);
+    let needsFix = false;
+    for (let i = 0; i < str.length; i++) {
+      const code = str.charCodeAt(i);
+      bytes[i] = code & 0xFF;
+      // 0xC3/0xC2 followed by a continuation byte is a tell-tale UTF-8 sequence
+      if (code === 0xC3 || code === 0xC2) needsFix = true;
+    }
+    if (!needsFix) return str;
+    return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+  } catch(e) { return str; }
+}
+
+// Encode a JS string as Windows-1252 bytes for output files.
+// FC26 roster/compdata .txt files are read by the game as Windows-1252.
+export function encodeWindows1252(str) {
+  const bytes = new Uint8Array(str.length * 2); // worst case
+  let len = 0;
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    if (code < 0x80) {
+      bytes[len++] = code; // ASCII: identical in W-1252
+    } else if (code >= 0xA0 && code <= 0xFF) {
+      bytes[len++] = code; // Latin-1 supplement: identical code points in W-1252
+    } else {
+      // Characters outside W-1252 range: replace with '?'
+      bytes[len++] = 0x3F;
+    }
+  }
+  return bytes.slice(0, len);
 }
 
 // ── Case-insensitive field getter (no Unicode changes) ─────────────────
@@ -191,7 +224,7 @@ export function makeplayers(templateData, settings) {
     return generatedPlayers;
 }
 
-// ── Export players to TXT (tab-separated, UTF‑8) ───────────────────────
+// ── Export players to TXT (tab-separated, Windows-1252) ─────────────────
 export function playerstableobjtostring26(obj){
     const keysorder=[
         "firstnameid","lastnameid","playerjerseynameid","commonnameid","role4","role3","gkglovetypecode","role5","role2","role1",
@@ -231,6 +264,11 @@ export function playerstableobjtostring26(obj){
     return allrows.join('\n');
 }
 
+// Returns a Windows-1252 Uint8Array suitable for Blob output
+export function playerstableobjtostring26Bytes(obj) {
+  return encodeWindows1252(playerstableobjtostring26(obj));
+}
+
 export function editedplayernamesobjtostring26(obj) {
     const headers = ['firstname', 'commonname', 'playerjerseyname', 'surname', 'playerid'];
     const headerRow = headers.join('\t');
@@ -244,6 +282,11 @@ export function editedplayernamesobjtostring26(obj) {
         allRows.push(valuesRow);
     });
     return allRows.join('\n');
+}
+
+// Returns a Windows-1252 Uint8Array suitable for Blob output
+export function editedplayernamesobjtostring26Bytes(obj) {
+  return encodeWindows1252(editedplayernamesobjtostring26(obj));
 }
 
 export function findnameid(name) {

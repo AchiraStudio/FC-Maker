@@ -3,7 +3,7 @@ import ExcelJS from 'exceljs';
 import { UploadCloud, Download, Loader2, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { makeplayers, playerstableobjtostring26, editedplayernamesobjtostring26 } from '../utils/rm26/smtools.js';
+import { makeplayers, playerstableobjtostring26Bytes, editedplayernamesobjtostring26Bytes } from '../utils/rm26/smtools.js';
 
 export default function RosterMaker() {
   const [templateData, setTemplateData] = useState([]);
@@ -145,8 +145,8 @@ export default function RosterMaker() {
     try {
       const generatedPlayers = makeplayers(templateData, settings);
       
-      const outputString = playerstableobjtostring26(generatedPlayers);
-      const blob1 = new Blob([outputString], { type: 'text/plain' });
+      const bytes1 = playerstableobjtostring26Bytes(generatedPlayers);
+      const blob1 = new Blob([bytes1], { type: 'application/octet-stream' });
       const url1 = URL.createObjectURL(blob1);
       const a1 = document.createElement('a');
       a1.href = url1;
@@ -156,8 +156,8 @@ export default function RosterMaker() {
       document.body.removeChild(a1);
       URL.revokeObjectURL(url1);
 
-      const editedNamesString = editedplayernamesobjtostring26(generatedPlayers);
-      const blob2 = new Blob([editedNamesString], { type: 'text/plain' });
+      const bytes2 = editedplayernamesobjtostring26Bytes(generatedPlayers);
+      const blob2 = new Blob([bytes2], { type: 'application/octet-stream' });
       const url2 = URL.createObjectURL(blob2);
       const a2 = document.createElement('a');
       a2.href = url2;
