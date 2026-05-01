@@ -12,11 +12,13 @@ const MODES = [
   { id: "league", label: "League", icon: "📊" },
   { id: "worldcup", label: "World Cup", icon: "🌍" },
   { id: "cup", label: "Cup Competition", icon: "🏆" },
+  { id: "teams", label: "Teams (manual URLs)", icon: "⚽" },
 ];
 
 export default function TeamMaker() {
   // Step 1 State
   const [url, setUrl] = useState("");
+  const [teamUrls, setTeamUrls] = useState("");
   const [mode, setMode] = useState("league");
   const [deepFetch, setDeepFetch] = useState(false);
   const [startTeamId, setStartTeamId] = useState("1001");
@@ -25,7 +27,7 @@ export default function TeamMaker() {
   const [startTeamKitId, setStartTeamKitId] = useState("17031");
   const [leagueId, setLeagueId] = useState(0);
   const [artificialId, setArtificialId] = useState(0);
-  const [teamFilter, setTeamFilter] = useState(""); // NEW
+  const [teamFilter, setTeamFilter] = useState("");
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeProgress, setScrapeProgress] = useState(0);
   const [scrapeLogs, setScrapeLogs] = useState(["• Scraper module initialized. Awaiting URL."]);
@@ -87,10 +89,6 @@ export default function TeamMaker() {
         setDefaultPlayers(players);
         logScrape(`📥 Loaded ${players.length} default players from players.txt`);
 
-        const samplePlayer = players.find(p => p.firstnameid === '10742' && p.lastnameid === '2970');
-        if (samplePlayer) logScrape(`🔍 Sample player found: firstnameid=10742, lastnameid=2970 → playerid=${samplePlayer.playerid}`);
-        else logScrape(`⚠️ Sample player (10742,2970) NOT found in players.txt – check delimiter or headers.`);
-
         // ----- Load playernames.txt -----
         const namesRes = await fetch('/defaults/playernames.txt');
         if (!namesRes.ok) throw new Error('playernames.txt not found');
@@ -98,7 +96,7 @@ export default function TeamMaker() {
         const namesLines = namesText.trim().split('\n');
         const namesDelim = detectDelimiter(namesLines[0]);
         const namesRows = namesLines.map(line => line.split(namesDelim));
-        const nameMap = new Map(); // nameid → name
+        const nameMap = new Map();
         for (let i = 1; i < namesRows.length; i++) {
           const row = namesRows[i];
           if (row.length < 3) continue;
@@ -108,10 +106,6 @@ export default function TeamMaker() {
         }
         setPlayerNamesMap(nameMap);
         logScrape(`📥 Loaded ${nameMap.size} name mappings from playernames.txt`);
-
-        const emilName = nameMap.get(10742);
-        const auderoName = nameMap.get(2970);
-        logScrape(`🔍 Name for 10742: ${emilName || 'NOT FOUND'}, Name for 2970: ${auderoName || 'NOT FOUND'}`);
 
         setDefaultDataLoaded(true);
       } catch (err) {
@@ -126,7 +120,11 @@ export default function TeamMaker() {
   // STEP 1: EXTRACTION (Scraper)
   // ==========================================
   const handleStartScrape = async () => {
-    if (!url.trim()) { logScrape("⚠️ Error: Please enter a Transfermarkt URL."); return; }
+    if (mode === 'teams') {
+      if (!teamUrls.trim()) { logScrape("⚠️ Error: Please enter at least one team URL."); return; }
+    } else {
+      if (!url.trim()) { logScrape("⚠️ Error: Please enter a Transfermarkt URL."); return; }
+    }
     if (!defaultDataLoaded) { logScrape("⚠️ Waiting for default data to load..."); return; }
     
     const teamId = parseInt(startTeamId, 10) || 1001;
@@ -140,8 +138,16 @@ export default function TeamMaker() {
 
     try {
       const scraper = await runScraper(
-        url.trim(), mode, deepFetch, logScrape, setScrapeProgress,
-        teamId, playerId, defaultPlayers, playerNamesMap, teamFilter
+        mode === 'teams' ? teamUrls : url.trim(), 
+        mode, 
+        deepFetch, 
+        logScrape, 
+        setScrapeProgress,
+        teamId, 
+        playerId, 
+        defaultPlayers, 
+        playerNamesMap, 
+        teamFilter
       );
       scraperControl.current = scraper.stop;
       
@@ -275,7 +281,7 @@ export default function TeamMaker() {
           style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(0,0,0,0.4)', padding: '0.6rem 1.2rem', borderRadius: '30px', border: '1px solid var(--glass-border)' }}
         >
           <Database size={16} color="var(--accent-color)" />
-          <span style={{ fontSize: '0.85rem', color: 'var(--accent-color)' }}>Pipeline v4.0</span>
+          <span style={{ fontSize: '0.85rem', color: 'var(--accent-color)' }}>Pipeline v5.0</span>
         </motion.div>
       </div>
 
@@ -292,16 +298,6 @@ export default function TeamMaker() {
           
           <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
             
-            {/* Target URL */}
-            <div>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>TARGET URL</label>
-              <input 
-                type="text" value={url} onChange={e => setUrl(e.target.value)} disabled={isScraping}
-                placeholder="https://www.transfermarkt.com/..."
-                style={inputStyle} 
-              />
-            </div>
-
             {/* Scraping Mode */}
             <div>
               <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>SCRAPING MODE</label>
@@ -330,6 +326,40 @@ export default function TeamMaker() {
                 Deep Fetch Profiles (Slower, Accurate Nation/Foot)
               </label>
             </div>
+
+            {/* URL input – changes based on mode */}
+            {mode !== 'teams' ? (
+              <div>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>TARGET URL</label>
+                <input 
+                  type="text" value={url} onChange={e => setUrl(e.target.value)} disabled={isScraping}
+                  placeholder="https://www.transfermarkt.com/..."
+                  style={inputStyle} 
+                />
+              </div>
+            ) : (
+              <div>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>TEAM URLS (one per line)</label>
+                <textarea
+                  value={teamUrls}
+                  onChange={(e) => setTeamUrls(e.target.value)}
+                  disabled={isScraping}
+                  rows={5}
+                  placeholder="https://www.transfermarkt.com/fc-barcelona/startseite/verein/131&#10;https://www.transfermarkt.com/real-madrid/startseite/verein/418"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem 1rem',
+                    background: 'rgba(0,0,0,0.2)',
+                    border: '1px solid var(--glass-border)',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontFamily: "'Poppins', sans-serif",
+                    fontSize: '0.9rem',
+                    resize: 'vertical'
+                  }}
+                />
+              </div>
+            )}
 
             {/* Starting IDs */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -388,17 +418,17 @@ export default function TeamMaker() {
               </div>
             </div>
 
-            {/* NEW: Team Filter */}
+            {/* Team Filter (applies to all modes) */}
             <div>
               <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'block' }}>
-                TEAM FILTER (one per line, empty = all teams)
+                TEAM FILTER (one per line, empty = all teams from source)
               </label>
               <textarea
                 value={teamFilter}
                 onChange={(e) => setTeamFilter(e.target.value)}
                 disabled={isScraping}
                 rows={4}
-                placeholder="Nicaragua&#10;Haiti&#10;Cuba&#10;Curaçao&#10;Dominican Republic&#10;Suriname&#10;Trinidad and Tobago&#10;Albania&#10;Greece&#10;Armenia&#10;Bosnia and Herzegovina&#10;Bulgaria&#10;Kosovo"
+                placeholder="Nicaragua&#10;Haiti&#10;Cuba&#10;Bosnia and Herzegovina"
                 style={{
                   width: '100%',
                   padding: '0.75rem 1rem',

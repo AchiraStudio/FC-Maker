@@ -6,6 +6,7 @@ import RosterMaker from './pages/RosterMaker';
 import TeamMaker from './pages/TeamMaker';
 import BadgeCreator from './pages/BadgeCreator';
 import MinikitCreator from './pages/MinikitCreator';
+import MultiNationGenerator from './pages/MultiNationGenerator.jsx';
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
           <Route path="/team-maker" element={<TeamMaker />} />
           <Route path="/badge-creator" element={<BadgeCreator />} />
           <Route path="/minikit-creator" element={<MinikitCreator />} />
+          <Route path="/multi-nation" element={<MultiNationGenerator />} />
         </Routes>
       </Layout>
     </Router>

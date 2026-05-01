@@ -12,12 +12,11 @@ function getRandomFIFADate() {
   const month = randomDate.getUTCMonth() + 1;
   const day = randomDate.getUTCDate();
 
-  // Julian Day Number conversion (same as getfifabirthdateval)
   const a = Math.floor((14 - month) / 12);
   const y = year + 4800 - a;
   const m = month + 12 * a - 3;
   const jdn = day + Math.floor((153 * m + 2) / 5) + y * 365 + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
-  return jdn - 2299160; // FIFA base offset
+  return jdn - 2299160;
 }
 
 // ── Jersey number pools (unchanged) ─────────────────────────────────────
@@ -201,7 +200,7 @@ export function processData(teams, players, isNationalTeam = false, startManager
     setCol('matchdaymidfieldrating', ratings.matchdayMidfield); setCol('matchdaydefenserating', ratings.matchdayDefense);
     results.teams.push(tVals);
 
-    // 2. TeamKits (unchanged)
+    // 2. TeamKits
     templates.teamkits.templates.forEach((kitTemplate, kitIdx) => {
       let kRow = kitTemplate.replace(/{team_id}/g, teamId).replace(/{teamid}/g, teamId);
       const computedKitId = startTeamKitId + (idx * 3) + kitIdx;
@@ -209,7 +208,7 @@ export function processData(teams, players, isNationalTeam = false, startManager
       results.teamkits.push(kRow.split(','));
     });
 
-    // 3. Formations (unchanged)
+    // 3. Formations
     let fRow = templates.formations.templates[`template${templateNum}`][0];
     fRow = fRow.replace(/{teamid}/g, teamId).replace(/{formationid}/g, templateNum);
     results.formations.push(fRow.split(','));
@@ -228,7 +227,7 @@ export function processData(teams, players, isNationalTeam = false, startManager
       else startingPlayers.push(-1);
     }
 
-    // 5. TeamMentality (unchanged)
+    // 5. TeamMentality
     let mentTemplateKey = `template${templateNum}`;
     if (!templates.teammentality.templates[mentTemplateKey]) mentTemplateKey = 'template1';
     const mentPlayerOrder = [0, 9, 1, 7, 6, 5, 8, 2, 4, 3, 10];
@@ -244,7 +243,7 @@ export function processData(teams, players, isNationalTeam = false, startManager
       results.teammentality.push(mRow.split(','));
     });
 
-    // 6. TeamSheet (unchanged)
+    // 6. TeamSheet
     let tsRow = templates.teamsheet.template.replace(/{teamid}/g, teamId).replace(/{team_id}/g, teamId);
     for (let i = 0; i < 11; i++) tsRow = tsRow.replace(new RegExp(`\\{playerid${i}\\}`, 'g'), startingPlayers[i] !== undefined ? startingPlayers[i] : -1);
     const subs = teamPlayers.filter(p => !startingPlayers.includes(p.playerid));
@@ -258,7 +257,7 @@ export function processData(teams, players, isNationalTeam = false, startManager
     Object.entries(tsRoleMapping).forEach(([k, v]) => tsRow = tsRow.replace(new RegExp(`\\{${k}\\}`, 'g'), v));
     results.teamsheet.push(tsRow.split(','));
 
-    // 7. TeamPlayerLink (unchanged)
+    // 7. TeamPlayerLink
     const assignedIdsLink = new Set(), teamUsedNumbers = new Set();
     startingPlayers.forEach((pid, i) => {
       if (pid !== -1) {
@@ -286,7 +285,7 @@ export function processData(teams, players, isNationalTeam = false, startManager
       }
     });
 
-    // 8. Managers — COMPLETELY REWORKED (no template string)
+    // 8. Managers
     const natCode = randChoice(random_values.nationalities);
     const countryList = Object.keys(names_data);
     let countryData = null;
@@ -305,7 +304,7 @@ export function processData(teams, players, isNationalTeam = false, startManager
       commonname: `${managerFirstname} ${managerSurname}`,
       eyebrowcode: randChoice(random_values.eyebrowcodes),
       skintypecode: 0,
-      haircolorcode: 22, // neutral
+      haircolorcode: 22,
       facialhairtypecode: randChoice(random_values.facialhairtypecodes),
       accessorycode4: 0,
       hairtypecode: randChoice(random_values.hairtypecodes),
@@ -347,7 +346,7 @@ export function processData(teams, players, isNationalTeam = false, startManager
       accessorycode2: 0,
       hairstylecode: 0,
       bodytypecode: randChoice(random_values.bodytypecodes),
-      managerjointeamdate: 160725, // static for all
+      managerjointeamdate: 160725,
       trait1vstrong: 4202624,
       accessorycolourcode2: 0,
       facialhaircolorcode: randChoice(random_values.facialhaircolorcodes)
@@ -355,7 +354,7 @@ export function processData(teams, players, isNationalTeam = false, startManager
     const managerRow = templates.managers.columns.map(col => managerObj[col] !== undefined ? managerObj[col] : '');
     results.managers.push(managerRow);
 
-    // 9. Language Strings (unchanged)
+    // 9. Language Strings
     const common_abbreviations = {
       "manchester united": "MUN", "manchester city": "MCI", "real madrid": "RMA",
       "barcelona": "FCB", "bayern munich": "FCB", "paris saint-germain": "PSG",
@@ -379,7 +378,7 @@ export function processData(teams, players, isNationalTeam = false, startManager
       results.language_strings.push(sRow.split(','));
     });
 
-    // 10. TeamNationsLink (unchanged)
+    // 10. TeamNationsLink
     let teamNationId = 146;
     if (teamnationality && teamnationality.trim() !== '') {
       const matched = nationNameToId.get(teamnationality.toLowerCase());
@@ -387,7 +386,7 @@ export function processData(teams, players, isNationalTeam = false, startManager
     }
     results.team_nations_link.push([leagueId, teamNationId, teamId]);
 
-    // 11. LeagueTeamLinks (unchanged)
+    // 11. LeagueTeamLinks
     results.league_team_links.push([
       0, 2, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0,
       leagueId, leagueId, 0, 0, 0, 0, artificialId, 0, teamId,

@@ -22,24 +22,23 @@ export async function runScraper(
   };
   const stop = () => { isRunning = false; };
 
-  // ─── Reverse map: name → nameid ──────────────────────────────────────
+  // ─── Reverse map: name → nameid (for duplicate detection, uses normalization) ───
   const nameToIdMap = new Map();
+  const normalizeForId = (str) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   for (const [id, name] of playerNamesMap.entries()) {
-    const normalized = name.trim().toLowerCase();
+    const normalized = normalizeForId(name);
     if (normalized && !nameToIdMap.has(normalized)) {
       nameToIdMap.set(normalized, id);
     }
   }
   log(`📊 Name→ID map: ${nameToIdMap.size} entries`);
 
-  // ─── Build existing players indices ──────────────────────────────────
+  // ─── Build existing players indices (same as before) ─────────────────────
   const existingByIdPair = new Map();
-
   for (const p of defaultPlayers) {
     const firstId = parseInt(p.firstnameid, 10);
     const lastId = parseInt(p.lastnameid, 10);
     if (isNaN(firstId) || isNaN(lastId) || firstId <= 0 || lastId <= 0) continue;
-
     const key = `${firstId}|${lastId}`;
     existingByIdPair.set(key, {
       playerid: parseInt(p.playerid, 10),
@@ -51,12 +50,12 @@ export async function runScraper(
   }
   log(`📊 Existing players by ID pair: ${existingByIdPair.size} entries`);
 
-  // ========== TEAM FILTER LOGIC ==========
+  // ========== TEAM FILTER (normalized for comparison, but original names preserved) ==========
   let allowedTeamsSet = null;
   if (teamFilter && teamFilter.trim()) {
     const rawFilters = teamFilter.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
     if (rawFilters.length > 0) {
-      const normalizeName = (name) => name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      const normalizeForMatch = (str) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
       const aliasMap = {
         "st. kitts": "saint kitts and nevis",
         "st kitts": "saint kitts and nevis",
@@ -83,10 +82,10 @@ export async function runScraper(
       };
       const allowed = new Set();
       for (let f of rawFilters) {
-        let norm = normalizeName(f);
+        let norm = normalizeForMatch(f);
         if (aliasMap[norm]) norm = aliasMap[norm];
         allowed.add(norm);
-        allowed.add(normalizeName(f));
+        allowed.add(normalizeForMatch(f));
       }
       allowedTeamsSet = allowed;
       log(`🚩 Team filter active: ${rawFilters.length} team(s). Only matching teams will be scraped.`);
@@ -142,9 +141,10 @@ export async function runScraper(
     return combos;
   };
 
+  // ─── Player duplicate detection (normalized for matching only) ─────────
   const findExistingPlayer = (firstNameStr, lastNameStr) => {
-    const firstNorm = firstNameStr?.trim().toLowerCase();
-    const lastNorm = lastNameStr?.trim().toLowerCase();
+    const firstNorm = firstNameStr?.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const lastNorm = lastNameStr?.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     if (!firstNorm || !lastNorm) return null;
 
     const firstId = nameToIdMap.get(firstNorm);
@@ -168,8 +168,8 @@ export async function runScraper(
     for (const p of defaultPlayers) {
       const pFirstId = parseInt(p.firstnameid, 10);
       const pLastId = parseInt(p.lastnameid, 10);
-      const pFirstName = playerNamesMap.get(pFirstId)?.toLowerCase();
-      const pLastName = playerNamesMap.get(pLastId)?.toLowerCase();
+      const pFirstName = playerNamesMap.get(pFirstId)?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      const pLastName = playerNamesMap.get(pLastId)?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
       if (pFirstName === firstNorm && pLastName === lastNorm) {
         return { playerid: parseInt(p.playerid, 10) };
       }
@@ -229,25 +229,108 @@ export async function runScraper(
     return p.length <= 3 ? p.toUpperCase() : p.charAt(0).toUpperCase() + p.slice(1);
   };
 
+  // ─── Build squad URL from any team page (startseite -> kader) ─────────
+  const slugMappings = {
+    'amerikanisch-samoa': 'american-samoa'
+  };
+
   const buildSquadUrl = (teamUrl, directSquadUrl = null, seasonOverride = null) => {
-    let baseUrl;
     if (directSquadUrl) {
-      baseUrl = directSquadUrl;
-      if (baseUrl.startsWith('/')) baseUrl = 'https://www.transfermarkt.com' + baseUrl;
-    } else {
-      let rel = teamUrl;
-      if (rel.startsWith('https://www.transfermarkt.com')) rel = rel.replace('https://www.transfermarkt.com', '');
-      const match = rel.match(/^(\/[^/]+)\/[^/]+\/verein\/(\d+)/);
-      if (match) baseUrl = `https://www.transfermarkt.com${match[1]}/kader/verein/${match[2]}`;
-      else baseUrl = 'https://www.transfermarkt.com' + rel.replace(/\/spielplan\//, '/kader/').replace(/\/startseite\//, '/kader/');
+      let base = directSquadUrl;
+      if (base.startsWith('/')) base = 'https://www.transfermarkt.com' + base;
+      base = base.replace(/\/saison_id\/\d+/, '');
+      if (seasonOverride) return base + `/saison_id/${seasonOverride}/plus/1`;
+      return base + '/plus/1';
     }
+
+    let cleanTeamUrl = teamUrl;
+    if (cleanTeamUrl.startsWith('https://www.transfermarkt.com')) {
+      cleanTeamUrl = cleanTeamUrl.replace('https://www.transfermarkt.com', '');
+    }
+
+    const match = cleanTeamUrl.match(/^\/([^/]+)\/[^/]+\/verein\/(\d+)/);
+    let teamId, slug;
+    if (match) {
+      slug = match[1];
+      teamId = match[2];
+    } else {
+      const idMatch = cleanTeamUrl.match(/\/verein\/(\d+)/);
+      if (!idMatch) return null;
+      teamId = idMatch[1];
+      slug = null;
+    }
+
+    let pathName = slug;
+    if (slug) {
+      pathName = slugMappings[slug] || slug;
+    } else if (teamId) {
+      pathName = `team-${teamId}`;
+    }
+
+    let baseUrl = `https://www.transfermarkt.com/${pathName}/kader/verein/${teamId}`;
     baseUrl = baseUrl.replace(/\/saison_id\/\d+/, '');
     if (seasonOverride) return baseUrl + `/saison_id/${seasonOverride}/plus/1`;
     return baseUrl + '/plus/1';
   };
 
-  // ────────────────── Team list extraction ─────────────────────────────
+  // ────────────────── Team list extraction (supports space or newline separated URLs) ─────────
   const getTeams = async () => {
+    if (mode === 'teams') {
+      // Split by any whitespace (space, tab, newline) to handle space-separated URLs
+      const urls = url.split(/\s+/).map(l => l.trim()).filter(l => l.length > 0 && l.startsWith('http'));
+      if (urls.length === 0) {
+        log(`⚠️ No valid URLs found in input. Please ensure each URL starts with http:// or https://`);
+        return [];
+      }
+      const teams = [];
+      for (const teamUrl of urls) {
+        let teamName = "";
+        const vereinMatch = teamUrl.match(/\/verein\/(\d+)/);
+        if (vereinMatch) {
+          // Fetch the team page to extract the official name from the title element
+          try {
+            const teamPageHtml = await safeRequest(teamUrl);
+            if (teamPageHtml) {
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(teamPageHtml, "text/html");
+              const titleElement = doc.querySelector("title");
+              if (titleElement) {
+                let title = titleElement.textContent.trim();
+                // Remove " - Club profile | Transfermarkt" suffix
+                const suffixIndex = title.indexOf(" - Club profile");
+                if (suffixIndex !== -1) {
+                  title = title.substring(0, suffixIndex);
+                }
+                teamName = title.trim();
+              }
+            }
+          } catch (err) {
+            log(`  ⚠️ Could not fetch team page for ${teamUrl}: ${err.message}`);
+          }
+          // Fallback if extraction failed
+          if (!teamName) {
+            const slug = teamUrl.replace(/https?:\/\/[^\/]+/, '').split('/')[1];
+            if (slug) {
+              teamName = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            } else {
+              teamName = `Team_${vereinMatch[1]}`;
+            }
+          }
+        } else {
+          teamName = "Unknown Team";
+          log(`  ⚠️ Could not extract team ID from URL: ${teamUrl}`);
+        }
+        teams.push({
+          name: teamName,
+          href: teamUrl,
+          squadUrl: null,
+          nationality: ''
+        });
+      }
+      return teams;
+    }
+
+    // Original logic for league/worldcup/cup
     const html = await safeRequest(url);
     if (!html) return [];
     const parser = new DOMParser();
@@ -425,7 +508,7 @@ export async function runScraper(
     });
   };
 
-  // ────────────────── Main extraction loop with team filter ─────────────
+  // ────────────────── Main extraction loop with team filter and URL conversion ─────────
   log("Initiating extraction with team filter and duplicate prevention...");
   const scrapedTeams = await getTeams();
   if (!scrapedTeams.length) throw new Error("No teams found.");
@@ -438,7 +521,6 @@ export async function runScraper(
     if (!isRunning) break;
     const { name: teamName, href: teamUrl, squadUrl: directSquadUrl, nationality: teamNationality } = scrapedTeams[i];
     
-    // ----- Apply team filter -----
     if (!shouldScrapeTeam(teamName)) {
       log(`⏭️ Skipping team "${teamName}" – not in filter.`);
       continue;
@@ -539,7 +621,7 @@ export async function runScraper(
     state.successfulTeams.add(teamName);
     state.teams.push({
       teamid: teamIdCounter++,
-      teamname: teamName,
+      teamname: teamName,               // original UTF‑8 name
       teamnationality: teamNationality || ''
     });
     log(`✓ Locked ${players.length} players for ${teamName} (${players.filter(p => p.isScraped).length} new, ${players.filter(p => !p.isScraped).length} existing)`);

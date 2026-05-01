@@ -1,3 +1,5 @@
+// /───────────────────── src/utils/rm26/smtools.js ──────────────────────/
+
 import { getovrfromtemplate, getpositionid, setinitialatttributes, gkadjustment, getattributesforpos, rectifyovr, getpotential, calculatestamina, setmap } from './attributes.js';
 import { getskintone, gethaircolor, getfacialhaircolor, getfacialhairtype, getheadtypecode, gethairtypecode, getshoe, getgkglove, geteyebrowcode, geteyecolorcode } from './appearance.js';
 import { getfifabirthdateval, parseBirthdate, getinternationalrep, getfoot, getweakfoot } from './demographics.js';
@@ -5,13 +7,13 @@ import { nations } from './resources.js';
 
 export let burnedplayerids = [];
 
-// ── Case-insensitive field getter ───────────────────────────────────────
+// ── Case-insensitive field getter (no Unicode changes) ─────────────────
 function getFieldCI(obj, name) {
     const key = Object.keys(obj).find(k => k.toLowerCase() === name.toLowerCase());
     return key ? obj[key] : undefined;
 }
 
-// ── Nationality alias normalisation ─────────────────────────────────
+// ── Nationality alias normalisation (preserves original display name) ──
 const NATIONALITY_ALIASES = {
     'north korea':              'Korea DPR',
     'south korea':              'Korea Republic',
@@ -39,15 +41,16 @@ function normaliseNationality(raw) {
     if (!raw) return null;
     const trimmed = String(raw).trim();
     const lower = trimmed.toLowerCase();
+    // Return aliased name (with original Unicode characters) or the trimmed string
     return NATIONALITY_ALIASES[lower] || trimmed;
 }
 
+// ── Main generation function ───────────────────────────────────────────
 export function makeplayers(templateData, settings) {
     let generatedPlayers = [];
     templateData.forEach(row => {
         let player = parsetemplateplayer({ ...row });
         
-        // player.nat is already normalised by parsetemplateplayer
         const natName = player.nat || 'Uganda';
 
         let demo = builddemographics(
@@ -183,8 +186,29 @@ export function makeplayers(templateData, settings) {
     return generatedPlayers;
 }
 
+// ── Export players to TXT (tab-separated, UTF‑8) ───────────────────────
 export function playerstableobjtostring26(obj){
-    const keysorder=["firstnameid","lastnameid","playerjerseynameid","commonnameid","role4","role3","gkglovetypecode","role5","role2","role1","eyebrowcode","skintypecode","haircolorcode","facialhairtypecode","curve","jerseystylecode","agility","tattooback","accessorycode4","gksavetype","positioning","tattooleftarm","hairtypecode","facepsdlayer0","standingtackle","preferredposition3","longpassing","penalties","animfreekickstartposcode","lipcolor","isretiring","longshots","gkdiving","icontrait2","interceptions","shoecolorcode2","crossing","potential","gkreflexes","finishingcode1","reactions","composure","skinsurfacepack","vision","contractvaliduntil","finishing","dribbling","slidingtackle","accessorycode3","preferredposition5","accessorycolourcode1","headtypecode","driref","sprintspeed","undershortstyle","height","hasseasonaljersey","tattoohead","preferredposition2","strength","shoetypecode","birthdate","preferredposition1","tattooleftleg","skinmakeup","ballcontrol","phypos","shotpower","trait1","socklengthcode","weight","hashighqualityhead","eyedetail","tattoorightarm","icontrait1","balance","gender","headassetid","gkkicking","defspe","internationalrep","preferredposition6","shortpassing","freekickaccuracy","skillmoves","faceposerpreset","usercaneditname","avatarpomid","finishingcode2","aggression","acceleration","paskic","headingaccuracy","iscustomized","preferredposition7","runningcode2","modifier","gkhandling","eyecolorcode","jerseysleevelengthcode","sockstylecode","accessorycolourcode3","accessorycode1","playerjointeamdate","headclasscode","tattoofront","nationality","preferredfoot","sideburnscode","weakfootabilitytypecode","jumping","personality","gkkickstyle","stamina","playerid","accessorycolourcode4","gkpositioning","headvariation","skillmoveslikelihood","trait2","shohan","skintonecode","shortstyle","overallrating","smallsidedshoetypecode","emotion","runstylecode","facepsdlayer1","muscularitycode","skincomplexion","jerseyfit","accessorycode2","shoedesigncode","shoecolorcode1","hairstylecode","bodytypecode","animpenaltiesstartposcode","pacdiv","defensiveawareness","runningcode1","preferredposition4","volleys","accessorycolourcode2","tattoorightleg","facialhaircolorcode"];
+    const keysorder=[
+        "firstnameid","lastnameid","playerjerseynameid","commonnameid","role4","role3","gkglovetypecode","role5","role2","role1",
+        "eyebrowcode","skintypecode","haircolorcode","facialhairtypecode","curve","jerseystylecode","agility","tattooback",
+        "accessorycode4","gksavetype","positioning","tattooleftarm","hairtypecode","facepsdlayer0","standingtackle",
+        "preferredposition3","longpassing","penalties","animfreekickstartposcode","lipcolor","isretiring","longshots","gkdiving",
+        "icontrait2","interceptions","shoecolorcode2","crossing","potential","gkreflexes","finishingcode1","reactions","composure",
+        "skinsurfacepack","vision","contractvaliduntil","finishing","dribbling","slidingtackle","accessorycode3","preferredposition5",
+        "accessorycolourcode1","headtypecode","driref","sprintspeed","undershortstyle","height","hasseasonaljersey","tattoohead",
+        "preferredposition2","strength","shoetypecode","birthdate","preferredposition1","tattooleftleg","skinmakeup","ballcontrol",
+        "phypos","shotpower","trait1","socklengthcode","weight","hashighqualityhead","eyedetail","tattoorightarm","icontrait1",
+        "balance","gender","headassetid","gkkicking","defspe","internationalrep","preferredposition6","shortpassing","freekickaccuracy",
+        "skillmoves","faceposerpreset","usercaneditname","avatarpomid","finishingcode2","aggression","acceleration","paskic",
+        "headingaccuracy","iscustomized","preferredposition7","runningcode2","modifier","gkhandling","eyecolorcode",
+        "jerseysleevelengthcode","sockstylecode","accessorycolourcode3","accessorycode1","playerjointeamdate","headclasscode",
+        "tattoofront","nationality","preferredfoot","sideburnscode","weakfootabilitytypecode","jumping","personality","gkkickstyle",
+        "stamina","playerid","accessorycolourcode4","gkpositioning","headvariation","skillmoveslikelihood","trait2","shohan",
+        "skintonecode","shortstyle","overallrating","smallsidedshoetypecode","emotion","runstylecode","facepsdlayer1",
+        "muscularitycode","skincomplexion","jerseyfit","accessorycode2","shoedesigncode","shoecolorcode1","hairstylecode",
+        "bodytypecode","animpenaltiesstartposcode","pacdiv","defensiveawareness","runningcode1","preferredposition4","volleys",
+        "accessorycolourcode2","tattoorightleg","facialhaircolorcode"
+    ];
 
     const headerrow = keysorder.join('\t');
     const allrows = [headerrow];
@@ -192,7 +216,9 @@ export function playerstableobjtostring26(obj){
     Object.keys(obj).forEach(nestedobjectkey => {
         const nestedobj = obj[nestedobjectkey];
         const valuesrow = keysorder.map(key => {
-            return String(nestedobj[key] !== undefined ? nestedobj[key] : '');
+            let val = nestedobj[key] !== undefined ? nestedobj[key] : '';
+            // Ensure strings are preserved as UTF-8 (no extra processing needed)
+            return String(val);
         }).join('\t');
         allrows.push(valuesrow);
     });
@@ -201,41 +227,40 @@ export function playerstableobjtostring26(obj){
 }
 
 export function editedplayernamesobjtostring26(obj) {
-  const headers = ['firstname', 'commonname', 'playerjerseyname', 'surname', 'playerid'];
-  const headerRow = headers.join('\t');
-  const allRows = [headerRow];
-  Object.keys(obj).forEach(nestedobjectkey => {
-      const player = obj[nestedobjectkey];
-      const valuesRow = headers.map(header => {
-          return String(player[header] !== undefined ? player[header] : '');
-      }).join('\t');
-      allRows.push(valuesRow);
-  });
-  return allRows.join('\n');
+    const headers = ['firstname', 'commonname', 'playerjerseyname', 'surname', 'playerid'];
+    const headerRow = headers.join('\t');
+    const allRows = [headerRow];
+    Object.keys(obj).forEach(nestedobjectkey => {
+        const player = obj[nestedobjectkey];
+        const valuesRow = headers.map(header => {
+            let val = player[header] !== undefined ? player[header] : '';
+            return String(val);
+        }).join('\t');
+        allRows.push(valuesRow);
+    });
+    return allRows.join('\n');
 }
 
 export function findnameid(name) {
-  return 0;
+    return 0;
 }
 
 export function findplayerid(input){
-  if(input!=0){
-    if(!burnedplayerids.find(x=>input==x)){
-      return input;
+    if(input!=0){
+        if(!burnedplayerids.find(x=>input==x)){
+            return input;
+        }
     }
-  }
-
-  let startpt=1;
-  if(input!=0){
-    startpt=input;
-  }
-  
-  for(let i=startpt;i<500000;i++){
-    if(burnedplayerids.includes(i)){continue}else{
-      burnedplayerids.push(i);
-      return i;
+    let startpt=1;
+    if(input!=0){
+        startpt=input;
     }
-  }
+    for(let i=startpt;i<500000;i++){
+        if(burnedplayerids.includes(i)){continue}else{
+            burnedplayerids.push(i);
+            return i;
+        }
+    }
 }
 
 export function randbetween(min, max) {
@@ -258,28 +283,20 @@ export function calculateage(birthdate, targetDate) {
 
 export function buildplayerattributes(pos1, pos2, pos3, pos4, pos5, pos6, pos7, baseOvr, age, nationname, settings) {
     const mappedPos = setmap(pos1 ?? 14);
-
-    // INJECT OPTIMISTIC CALCULATION BEFORE STAT GENERATION
     let ovr = baseOvr;
     if (settings && settings.optimisticMode) {
         ovr = Math.min(99, baseOvr + settings.boostAmount);
     }
-
     let attr = setinitialatttributes(ovr, mappedPos);
     attr = gkadjustment(pos1, pos2, pos3, pos4, ovr, attr);
-
     attr = getattributesforpos(pos4, ovr, attr);
     attr = getattributesforpos(pos3, ovr, attr);
     attr = getattributesforpos(pos2, ovr, attr);
     attr = getattributesforpos(pos1, ovr, attr); 
-
     attr.stamina = calculatestamina(ovr, pos1);
-
     attr = rectifyovr(pos1, attr, ovr);
-
     attr.overallrating = ovr;
     attr.potential = getpotential(age, ovr, pos1, pos2, pos3, pos4, nationname);
-
     attr.preferredposition1 = pos1 ?? 14;
     attr.preferredposition2 = pos2 ?? -1;
     attr.preferredposition3 = pos3 ?? -1;
@@ -287,21 +304,17 @@ export function buildplayerattributes(pos1, pos2, pos3, pos4, pos5, pos6, pos7, 
     attr.preferredposition5 = pos5 ?? -1;
     attr.preferredposition6 = pos6 ?? -1;
     attr.preferredposition7 = pos7 ?? -1;
-
     return attr;
 }
 
 export function buildplayerappearances(gender, nationname){
-
-    let nation = nations().find(n=>n.nation.toLowerCase()===nationname.toLowerCase());
+    let nation = nations().find(n=>n.nation.toLowerCase() === nationname.toLowerCase());
     if(!nation){
         nation= nations()[145];
     }
-
     let skintone = getskintone(nation);
-    let haircolor=gethaircolor(skintone);
-    let facialhaircolor=getfacialhaircolor(haircolor);
-
+    let haircolor = gethaircolor(skintone);
+    let facialhaircolor = getfacialhaircolor(haircolor);
     let appearance = {
         skintonecode: skintone || 5,
         haircolorcode: haircolor,
@@ -317,13 +330,11 @@ export function buildplayerappearances(gender, nationname){
         eyecolorcode: geteyecolorcode(skintone)||8,
         gender: gender || 0
     }
-
     return appearance;
 }
 
 export function builddemographics(height, weight, birthdate, foot, weakfoot, ovr){
-    
-   let demo={
+    let demo={
         height: height || 180,
         weight: weight || 75,
         birthdate: getfifabirthdateval(birthdate) || 141428,
@@ -332,12 +343,12 @@ export function builddemographics(height, weight, birthdate, foot, weakfoot, ovr
         personality: randbetween(1,5) || 3,
         weakfootabilitytypecode: getweakfoot(weakfoot) || 2
     };
-
     return demo;
 }
 
+// ── Template row parser: preserves UTF‑8 characters ─────────────────────
 export function parsetemplateplayer(player){
-    // ─ OVR / Transfer Value
+    // OVR / Transfer Value
     let cleanOvr = getFieldCI(player, 'ovr');
     cleanOvr = cleanOvr ? parseInt(String(cleanOvr).replace(/[^0-9.]/g, ''), 10) : null;
     let cleanTransferValue = getFieldCI(player, 'transfervalue') || getFieldCI(player, 'transfer_value');
@@ -345,18 +356,18 @@ export function parsetemplateplayer(player){
     let templateOvr = getovrfromtemplate(cleanOvr, cleanTransferValue);
     player.finovr = templateOvr ? templateOvr : randbetween(55, 75);
 
-    // ─ Nationality (normalise before anything else)
+    // Nationality (with alias mapping, preserving Unicode)
     const rawNat = getFieldCI(player, 'nat') || getFieldCI(player, 'nationality');
     player.nat = normaliseNationality(rawNat) || 'Uganda';
 
-    // ─ Birthdate (Randomize 18-35 years old if missing)
+    // Birthdate (parse or random)
     const rawBd = getFieldCI(player, 'birthdate') || getFieldCI(player, 'birthDate');
     const parsedBd = parseBirthdate(rawBd);
     let cleanBdString;
     if (parsedBd) {
         cleanBdString = `${parsedBd.year}-${String(parsedBd.month).padStart(2,'0')}-${String(parsedBd.day).padStart(2,'0')}`;
     } else {
-        const randomYear = randbetween(1991, 2008); // 18-35 years old in 2026
+        const randomYear = randbetween(1991, 2008);
         const randomMonth = randbetween(1, 12);
         const randomDay = randbetween(1, 28);
         cleanBdString = `${randomYear}-${String(randomMonth).padStart(2,'0')}-${String(randomDay).padStart(2,'0')}`;
@@ -364,32 +375,28 @@ export function parsetemplateplayer(player){
     player.age = calculateage(cleanBdString, '2026-01-01');
     player.birthdate = cleanBdString;
 
-    // ─ Height — case-insensitive, strip non-numeric, random 165-180 if missing/empty
+    // Height & weight (numeric)
     const rawH = getFieldCI(player, 'height');
     const cleanH = rawH ? parseInt(String(rawH).replace(/[^0-9.]/g, ''), 10) : NaN;
     player.height = (!isNaN(cleanH) && cleanH > 0) ? cleanH : randbetween(165, 180);
-
-    // ─ Weight — case-insensitive, random 65-85 if missing/empty
     const rawW = getFieldCI(player, 'weight');
     const cleanW = rawW ? parseInt(String(rawW).replace(/[^0-9.]/g, ''), 10) : NaN;
     player.weight = (!isNaN(cleanW) && cleanW > 0) ? cleanW : randbetween(65, 85);
 
-    // ─ Preferred Foot — case-insensitive, random Left/Right if missing
+    // Foot (case‑insensitive, but keep original string for mapping)
     const rawFoot = getFieldCI(player, 'foot') || getFieldCI(player, 'preferredfoot');
     const cleanFoot = rawFoot ? String(rawFoot).trim() : '';
     player.foot = cleanFoot.length > 0 ? cleanFoot : (Math.random() < 0.75 ? 'Right' : 'Left');
-
-    // ─ Weak Foot — case-insensitive, fallback 'Bad'
     const rawWF = getFieldCI(player, 'weakfoot') || getFieldCI(player, 'weak_foot');
     player.weakfoot = rawWF ? String(rawWF).trim() : 'Bad';
 
-    // ─ Name fields — case-insensitive
+    // Name fields – preserve exactly as given
     player.given  = getFieldCI(player, 'given')  || getFieldCI(player, 'firstname')  || '';
     player.sur    = getFieldCI(player, 'sur')    || getFieldCI(player, 'surname')    || getFieldCI(player, 'lastname') || '';
     player.jersey = getFieldCI(player, 'jersey') || getFieldCI(player, 'jerseyname') || '';
     player.nick   = getFieldCI(player, 'nick')   || getFieldCI(player, 'commonname') || '';
 
-    // ─ Positions — case-insensitive
+    // Positions – map from string to ID (string may contain UTF‑8)
     const normalizePos = (p) => {
         if (!p) return p;
         let str = String(p).trim().toLowerCase();
@@ -397,7 +404,6 @@ export function parsetemplateplayer(player){
         if (str === 'right midfield') return 'RM';
         return p;
     };
-    
     player.pos1 = getpositionid(normalizePos(getFieldCI(player, 'pos1') || getFieldCI(player, 'position1') || getFieldCI(player, 'position')), true);
     player.pos2 = getpositionid(normalizePos(getFieldCI(player, 'pos2') || getFieldCI(player, 'position2')), false);
     player.pos3 = getpositionid(normalizePos(getFieldCI(player, 'pos3') || getFieldCI(player, 'position3')), false);
