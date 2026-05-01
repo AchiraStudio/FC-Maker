@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { UploadCloud, Download, Loader2, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -48,11 +48,14 @@ export default function RosterMaker() {
     const reader = new FileReader();
 
     if (ext === 'xlsx' || ext === 'xls') {
-      reader.onload = (evt) => {
+      // Use arrayBuffer so ExcelJS handles the XML as proper UTF-8 —
+      // avoids the binaryString → Latin-1 mojibake (Víctor → VÃctor)
+      file.arrayBuffer().then(async (buffer) => {
         try {
-          const workbook = XLSX.read(evt.target.result, { type: 'binary' });
-          const sheets = workbook.SheetNames;
-          setPendingWorkbook(workbook);
+          const wb = new ExcelJS.Workbook();
+          await wb.xlsx.load(buffer);
+          const sheets = wb.worksheets.map(ws => ws.name);
+          setPendingWorkbook(wb);
           setPendingFileName(file.name);
           setSheetNames(sheets);
           setSelectedSheet(sheets[0]);
@@ -60,8 +63,7 @@ export default function RosterMaker() {
         } catch (err) {
           logUpdate(`Parse error: ${err.message}`);
         }
-      };
-      reader.readAsBinaryString(file);
+      });
     } else {
       // TXT / CSV parse fix
       reader.onload = (evt) => {
@@ -99,9 +101,34 @@ export default function RosterMaker() {
   const handleSheetConfirm = () => {
     if (!pendingWorkbook || !selectedSheet) return;
     try {
-      const worksheet = pendingWorkbook.Sheets[selectedSheet];
-      const rawData = XLSX.utils.sheet_to_json(worksheet);
-      const cleanData = rawData.filter(item => item.nat || item.NAT || item.Nat || item.Nationality);
+      // pendingWorkbook is now an ExcelJS Workbook instance
+      const ws = pendingWorkbook.worksheets.find(s => s.name === selectedSheet);
+      if (!ws) { logUpdate(`Sheet "${selectedSheet}" not found.`); return; }
+
+      const rows = [];
+      let headers = [];
+      ws.eachRow((row, rowNum) => {
+        // exceljs row.values is 1-indexed; slice(1) gives 0-indexed array
+        const vals = row.values.slice(1).map(v => {
+          if (v === null || v === undefined) return '';
+          // Rich-text cell: extract plain text
+          if (typeof v === 'object' && v.richText) return v.richText.map(rt => rt.text).join('');
+          // Hyperlink cell
+          if (typeof v === 'object' && v.text !== undefined) return String(v.text);
+          // Formula cell
+          if (typeof v === 'object' && v.result !== undefined) return String(v.result);
+          return String(v);
+        });
+        if (rowNum === 1) {
+          headers = vals.map(h => String(h).trim());
+        } else {
+          const obj = {};
+          headers.forEach((h, i) => { obj[h] = vals[i] ?? ''; });
+          rows.push(obj);
+        }
+      });
+
+      const cleanData = rows.filter(item => item.nat || item.NAT || item.Nat || item.Nationality);
       setTemplateData(cleanData);
       setPendingWorkbook(null);
       setSheetNames([]);

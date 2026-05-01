@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UploadCloud, Download, Loader2, Play, StopCircle, Database } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { runScraper } from '../utils/tm/scraper';
 import { processData } from '../utils/tm/processor';
 import { templates } from '../utils/tm/templates';
