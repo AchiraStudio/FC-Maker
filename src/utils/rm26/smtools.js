@@ -26,14 +26,16 @@ export function fixMojibake(str) {
   } catch(e) { return str; }
 }
 
-// Encode a JS string to UTF-8 with BOM so Excel and modern game tools read special characters correctly.
-export function encodeUTF8WithBOM(str) {
-  const utf8Bytes = new TextEncoder().encode(str);
-  const bytesWithBOM = new Uint8Array(utf8Bytes.length + 3);
-  bytesWithBOM[0] = 0xEF;
-  bytesWithBOM[1] = 0xBB;
-  bytesWithBOM[2] = 0xBF;
-  bytesWithBOM.set(utf8Bytes, 3);
+// Encode a JS string to UTF-16LE with BOM so Excel natively splits tab-separated files into columns
+export function encodeUTF16LEWithBOM(str) {
+  const bytesWithBOM = new Uint8Array(str.length * 2 + 2);
+  bytesWithBOM[0] = 0xFF;
+  bytesWithBOM[1] = 0xFE;
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    bytesWithBOM[i * 2 + 2] = code & 0xFF;
+    bytesWithBOM[i * 2 + 3] = code >> 8;
+  }
   return bytesWithBOM;
 }
 
@@ -256,9 +258,9 @@ export function playerstableobjtostring26(obj){
     return allrows.join('\n');
 }
 
-// Returns a UTF-8 Uint8Array with BOM suitable for Blob output
+// Returns a UTF-16LE Uint8Array with BOM suitable for Blob output
 export function playerstableobjtostring26Bytes(obj) {
-  return encodeUTF8WithBOM(playerstableobjtostring26(obj));
+  return encodeUTF16LEWithBOM(playerstableobjtostring26(obj));
 }
 
 export function editedplayernamesobjtostring26(obj) {
@@ -276,9 +278,9 @@ export function editedplayernamesobjtostring26(obj) {
     return allRows.join('\n');
 }
 
-// Returns a UTF-8 Uint8Array with BOM suitable for Blob output
+// Returns a UTF-16LE Uint8Array with BOM suitable for Blob output
 export function editedplayernamesobjtostring26Bytes(obj) {
-  return encodeUTF8WithBOM(editedplayernamesobjtostring26(obj));
+  return encodeUTF16LEWithBOM(editedplayernamesobjtostring26(obj));
 }
 
 export function findnameid(name) {
