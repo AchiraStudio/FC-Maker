@@ -360,7 +360,7 @@ const generatePlayerRow = (
     given: firstName,
     sur: lastName,
     nickname: "",
-    jerseyname: "",
+    jerseyname: lastName,
     birthdate,
     height,
     weight,
@@ -503,9 +503,9 @@ export default function MultiNationGenerator() {
       const generatedPlayers = makeplayers(templateData, settings);
       
       // Import the output formatters from smtools.js (they are also exported)
-      const { playerstableobjtostring26, editedplayernamesobjtostring26 } = await import('../utils/rm26/smtools.js');
-      const outputString = playerstableobjtostring26(generatedPlayers);
-      const blob1 = new Blob([outputString], { type: 'text/plain;charset=utf-8' });
+      const { playerstableobjtostring26Bytes, editedplayernamesobjtostring26Bytes } = await import('../utils/rm26/smtools.js');
+      const bytes1 = playerstableobjtostring26Bytes(generatedPlayers);
+      const blob1 = new Blob([bytes1], { type: 'application/octet-stream' });
       const url1 = URL.createObjectURL(blob1);
       const a1 = document.createElement('a');
       a1.href = url1;
@@ -515,8 +515,8 @@ export default function MultiNationGenerator() {
       document.body.removeChild(a1);
       URL.revokeObjectURL(url1);
       
-      const editedNamesString = editedplayernamesobjtostring26(generatedPlayers);
-      const blob2 = new Blob([editedNamesString], { type: 'text/plain;charset=utf-8' });
+      const bytes2 = editedplayernamesobjtostring26Bytes(generatedPlayers);
+      const blob2 = new Blob([bytes2], { type: 'application/octet-stream' });
       const url2 = URL.createObjectURL(blob2);
       const a2 = document.createElement('a');
       a2.href = url2;
