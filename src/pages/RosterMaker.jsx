@@ -101,7 +101,6 @@ export default function RosterMaker() {
   const handleSheetConfirm = () => {
     if (!pendingWorkbook || !selectedSheet) return;
     try {
-      // pendingWorkbook is now an ExcelJS Workbook instance
       const ws = pendingWorkbook.worksheets.find(s => s.name === selectedSheet);
       if (!ws) { logUpdate(`Sheet "${selectedSheet}" not found.`); return; }
 

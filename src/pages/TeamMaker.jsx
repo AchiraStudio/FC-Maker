@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UploadCloud, Download, Loader2, Play, StopCircle, Database } from 'lucide-react';
-import ExcelJS from 'exceljs';
+import { utils, writeFile, read } from 'xlsx';
 import { runScraper } from '../utils/tm/scraper';
 import { processData } from '../utils/tm/processor';
 import { templates } from '../utils/tm/templates';
@@ -175,14 +175,14 @@ export default function TeamMaker() {
   const handleDownloadRaw = () => {
     if (!rawScrapeData) return;
     logScrape("💾 Compiling Raw Excel Spreadsheet...");
-    const wb = XLSX.utils.book_new();
-    const wsTeams = XLSX.utils.json_to_sheet(rawScrapeData.teams);
-    const wsPlayers = XLSX.utils.json_to_sheet(rawScrapeData.players);
-    const wsScraped = XLSX.utils.json_to_sheet(rawScrapeData.scrapedPlayers);
-    XLSX.utils.book_append_sheet(wb, wsTeams, "Teams");
-    XLSX.utils.book_append_sheet(wb, wsPlayers, "Players");
-    XLSX.utils.book_append_sheet(wb, wsScraped, "Scraped-Players");
-    XLSX.writeFile(wb, `TM_Raw_Data_${Date.now()}.xlsx`);
+    const wb = utils.book_new();
+    const wsTeams = utils.json_to_sheet(rawScrapeData.teams);
+    const wsPlayers = utils.json_to_sheet(rawScrapeData.players);
+    const wsScraped = utils.json_to_sheet(rawScrapeData.scrapedPlayers);
+    utils.book_append_sheet(wb, wsTeams, "Teams");
+    utils.book_append_sheet(wb, wsPlayers, "Players");
+    utils.book_append_sheet(wb, wsScraped, "Scraped-Players");
+    writeFile(wb, `TM_Raw_Data_${Date.now()}.xlsx`);
     logScrape("✅ Spreadsheet downloaded successfully!");
   };
 
@@ -205,7 +205,7 @@ export default function TeamMaker() {
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
-        const workbook = XLSX.read(evt.target.result, { type: 'binary', cellDates: true });
+        const workbook = read(evt.target.result, { type: 'binary', cellDates: true });
         
         const sheetNames = workbook.SheetNames;
         const teamSheetName = sheetNames.find(s => s.toLowerCase() === 'teams');
@@ -213,8 +213,8 @@ export default function TeamMaker() {
         
         if (!teamSheetName || !playerSheetName) throw new Error("Workbook must contain 'Teams' and 'Players' sheets.");
 
-        const teams = XLSX.utils.sheet_to_json(workbook.Sheets[teamSheetName]);
-        const players = XLSX.utils.sheet_to_json(workbook.Sheets[playerSheetName]);
+        const teams = utils.sheet_to_json(workbook.Sheets[teamSheetName]);
+        const players = utils.sheet_to_json(workbook.Sheets[playerSheetName]);
         
         logProcess(`Parsed ${teams.length} teams and ${players.length} players. Aligning templates...`);
         
@@ -242,16 +242,16 @@ export default function TeamMaker() {
   const handleDownloadDb = () => {
     if (!finalDbData) return;
     logProcess("💾 Compiling Master EA Tables...");
-    const wb = XLSX.utils.book_new();
+    const wb = utils.book_new();
 
     Object.entries(finalDbData).forEach(([tableName, rows]) => {
       if (rows.length === 0) return;
       const dataWithHeaders = [templates[tableName].columns, ...rows];
-      const ws = XLSX.utils.aoa_to_sheet(dataWithHeaders);
-      XLSX.utils.book_append_sheet(wb, ws, tableName);
+      const ws = utils.aoa_to_sheet(dataWithHeaders);
+      utils.book_append_sheet(wb, ws, tableName);
     });
 
-    XLSX.writeFile(wb, `EA_Database_Tables_${Date.now()}.xlsx`);
+    writeFile(wb, `EA_Database_Tables_${Date.now()}.xlsx`);
     logProcess("✅ Master Database downloaded successfully!");
   };
 
